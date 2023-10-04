@@ -1,0 +1,18 @@
+.{
+    .name = "trex",
+    .version = "0.1.0",
+    .dependencies = .{
+        .serial = .{
+            .url = "https://github.com/desttinghim/zig-serial/archive/dc7a67466058961247864282aca656c554e6a49f.tar.gz",
+            .hash = "12205c51c12802bb9bfc7801f199e0fe0625009e025f60c5fd3030b22596367ac751",
+        },
+        .libui = .{
+            .url = "https://github.com/desttinghim/libui-ng/archive/3b34c8bb9e01afad27c68971b64e2478d189c5e4.tar.gz",
+            .hash = "1220963d95faf2b00c1c2e5da2796d7eafa9f318b02456375f94f99bb92ce3a3b7af",
+        },
+        .libxev = .{
+            .url = "https://github.com/Corendos/libxev/archive/b6827f9bbb6c6886d97b11d22531b85cd244c44e.tar.gz",
+            .hash = "1220018c7b9f12359bdad4d6c0c89e34548e79e6293dbf4ac49f69bd124e83c0e734",
+        },
+    },
+}
