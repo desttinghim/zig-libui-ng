@@ -9,6 +9,9 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
     });
 
+    // Re-export libui artifact
+    b.installArtifact(libui.artifact("ui"));
+
     const ui_module = b.addModule("ui", .{
         .source_file = .{ .path = "src/ui.zig" },
     });
