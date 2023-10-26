@@ -1,5 +1,30 @@
-const std = @import("std");
+//! # Libui-ng Zig Bindings
+//!
+//! Bindings to make using libui-ng from zig more pleasant.
+//!
+//! ## API
+//! Function names are meant to match the function names in libui with the `ui` prefix
+//! removed. Extern functions are exported under the namespace of the control they are
+//! for.
+
 const ui = @This();
+
+pub fn Init(options: *InitData) !void {
+    const err = uiInit(&options.options);
+    if (err == null) return;
+    options.error_string = err;
+    return InitError.Other;
+}
+
+pub const Uninit = uiUninit;
+pub const Main = uiMain;
+pub const MainSteps = uiMainSteps;
+pub const MainStep = uiMainStep;
+pub const Quit = uiQuit;
+pub const QueueMain = uiQueueMain;
+pub const Timer = uiTimer;
+pub const OnShouldQuit = uiOnShouldQuit;
+pub const FreeText = uiFreeText;
 
 pub const InitData = struct {
     options: InitOptions,
@@ -22,12 +47,33 @@ pub const InitError = error{
     Other,
 };
 
-pub fn Init(options: *InitData) !void {
-    const err = uiInit(&options.options);
-    if (err == null) return;
-    options.error_string = err;
-    return InitError.Other;
-}
+pub const MainStepWait = enum(c_int) {
+    blocking = 1,
+    nonblocking = 0,
+};
+pub const MainStepStatus = enum(c_int) {
+    finished = 0,
+    running = 1,
+};
+
+pub const TimerAction = enum(c_int) {
+    disarm = 0,
+    rearm = 1,
+};
+
+pub const QuitAction = enum(c_int) {
+    should_not_quit = 0,
+    should_quit = 1,
+};
+
+pub const ForEach = enum(c_int) {
+    Continue = 0,
+    Stop = 1,
+};
+
+pub const InitOptions = extern struct {
+    Size: usize,
+};
 
 pub extern fn uiInit(options: *InitOptions) ?[*:0]const u8;
 pub extern fn uiUninit() void;
@@ -41,45 +87,6 @@ pub extern fn uiQueueMain(f: ?*const fn (?*anyopaque) callconv(.C) void, data: ?
 pub extern fn uiTimer(milliseconds: c_int, f: ?*const fn (?*anyopaque) callconv(.C) TimerAction, data: ?*anyopaque) void;
 pub extern fn uiOnShouldQuit(f: ?*const fn (?*anyopaque) callconv(.C) QuitAction, data: ?*anyopaque) void;
 pub extern fn uiFreeText(text: *u8) void;
-
-pub const Uninit = uiUninit;
-pub const Main = uiMain;
-pub const MainSteps = uiMainSteps;
-pub const MainStepWait = enum(c_int) {
-    blocking = 1,
-    nonblocking = 0,
-};
-pub const MainStepStatus = enum(c_int) {
-    finished = 0,
-    running = 1,
-};
-pub const MainStep = uiMainStep;
-pub const Quit = uiQuit;
-
-// Callback functions
-pub const QueueMain = uiQueueMain;
-
-pub const TimerAction = enum(c_int) {
-    disarm = 0,
-    rearm = 1,
-};
-pub const Timer = uiTimer;
-
-pub const QuitAction = enum(c_int) {
-    should_not_quit = 0,
-    should_quit = 1,
-};
-pub const OnShouldQuit = uiOnShouldQuit;
-pub const FreeText = uiFreeText;
-
-pub const ForEach = enum(c_int) {
-    Continue = 0,
-    Stop = 1,
-};
-
-pub const InitOptions = extern struct {
-    Size: usize,
-};
 
 pub const Control = extern struct {
     Signature: u32,
@@ -172,6 +179,7 @@ pub const Window = opaque {
 
     pub const Title = uiWindowTitle;
     pub const SetTitle = uiWindowSetTitle;
+    pub const SetChild = uiWindowSetChild;
 
     const Point = struct {
         x: c_int,
@@ -220,8 +228,6 @@ pub const Window = opaque {
     pub fn SetBorderless(w: *Window, borderless: bool) void {
         uiWindowSetBorderless(w, @intFromBool(borderless));
     }
-
-    pub const SetChild = uiWindowSetChild;
 
     pub fn Margined(w: *Window) bool {
         uiWindowMargined(w) == 1;
@@ -293,6 +299,7 @@ pub const Window = opaque {
         uiWindowOnFocusChanged(window, callback, userdata);
     }
 
+    // Dialog boxes
     pub extern fn uiOpenFile(parent: *Window) [*:0]const u8;
     pub extern fn uiOpenFileWithParams(parent: *Window, params: *FileDialogParams) [*:0]const u8;
     pub extern fn uiOpenFolder(parent: *Window) [*:0]const u8;
@@ -1594,5 +1601,4 @@ pub const Table = opaque {
 };
 
 pub const Pi = @as(f64, 3.14159265358979323846264338327950288419716939937510582097494459);
-
-pub const externs = struct {};
+const std = @import("std");
