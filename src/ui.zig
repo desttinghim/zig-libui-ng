@@ -854,7 +854,7 @@ pub const FileDialogParams = extern struct {
     defaultPath: ?[*:0]const u8,
     defaultName: ?[*:0]const u8,
     filterCount: usize,
-    filters: ?*const Filter,
+    filters: ?[*]const Filter,
 };
 
 pub const Area = opaque {
@@ -1514,7 +1514,7 @@ pub const Table = opaque {
         ColorModelColumn: c_int,
     };
     pub const ColumnParameters = union(enum) {
-        Text: struct { text_column: c_int, editable_column: c_int, text_params: ?*TextColumnOptionalParams },
+        Text: struct { text_column: c_int, editable_column: c_int, text_params: *TextColumnOptionalParams },
         Image: struct { image_column: c_int },
         ImageText: struct { image_column: c_int, text_column: c_int, editable_column: c_int, text_params: ?*TextColumnOptionalParams },
         Checkbox: struct { checkbox_column: c_int, editable_column: c_int },
