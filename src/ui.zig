@@ -1514,7 +1514,7 @@ pub const Table = opaque {
         ColorModelColumn: c_int,
     };
     pub const ColumnParameters = union(enum) {
-        Text: struct { text_column: c_int, editable_column: c_int, text_params: *TextColumnOptionalParams },
+        Text: struct { text_column: c_int, editable_column: c_int, text_params: ?*TextColumnOptionalParams },
         Image: struct { image_column: c_int },
         ImageText: struct { image_column: c_int, text_column: c_int, editable_column: c_int, text_params: ?*TextColumnOptionalParams },
         Checkbox: struct { checkbox_column: c_int, editable_column: c_int },
@@ -1547,7 +1547,7 @@ pub const Table = opaque {
         return uiNewTable(params) orelse error.InitTable;
     }
 
-    pub extern fn uiTableAppendTextColumn(t: *Table, name: [*:0]const u8, textModelColumn: c_int, textEditableModelColumn: c_int, textParams: *Table.TextColumnOptionalParams) void;
+    pub extern fn uiTableAppendTextColumn(t: *Table, name: [*:0]const u8, textModelColumn: c_int, textEditableModelColumn: c_int, textParams: ?*Table.TextColumnOptionalParams) void;
     pub extern fn uiTableAppendImageColumn(t: *Table, name: [*:0]const u8, imageModelColumn: c_int) void;
     pub extern fn uiTableAppendImageTextColumn(t: *Table, name: [*:0]const u8, imageModelColumn: c_int, textModelColumn: c_int, textEditableModelColumn: c_int, textParams: *Table.TextColumnOptionalParams) void;
     pub extern fn uiTableAppendCheckboxColumn(t: *Table, name: [*:0]const u8, checkboxModelColumn: c_int, checkboxEditableModelColumn: c_int) void;
