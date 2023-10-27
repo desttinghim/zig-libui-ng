@@ -91,7 +91,7 @@ pub extern fn uiQuit() void;
 pub extern fn uiQueueMain(f: ?*const fn (?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
 pub extern fn uiTimer(milliseconds: c_int, f: ?*const fn (?*anyopaque) callconv(.C) TimerAction, data: ?*anyopaque) void;
 pub extern fn uiOnShouldQuit(f: ?*const fn (?*anyopaque) callconv(.C) QuitAction, data: ?*anyopaque) void;
-pub extern fn uiFreeText(text: *u8) void;
+pub extern fn uiFreeText(text: [*:0]const u8) void;
 
 pub const Control = extern struct {
     Signature: u32,
