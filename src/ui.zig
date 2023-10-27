@@ -305,12 +305,12 @@ pub const Window = opaque {
     }
 
     // Dialog boxes
-    pub extern fn uiOpenFile(parent: *Window) [*:0]const u8;
-    pub extern fn uiOpenFileWithParams(parent: *Window, params: *FileDialogParams) [*:0]const u8;
-    pub extern fn uiOpenFolder(parent: *Window) [*:0]const u8;
-    pub extern fn uiOpenFolderWithParams(parent: *Window, params: *FileDialogParams) [*:0]const u8;
-    pub extern fn uiSaveFile(parent: *Window) [*:0]const u8;
-    pub extern fn uiSaveFileWithParams(parent: *Window, params: *FileDialogParams) [*:0]const u8;
+    pub extern fn uiOpenFile(parent: *Window) ?[*:0]const u8;
+    pub extern fn uiOpenFileWithParams(parent: *Window, params: *FileDialogParams) ?[*:0]const u8;
+    pub extern fn uiOpenFolder(parent: *Window) ?[*:0]const u8;
+    pub extern fn uiOpenFolderWithParams(parent: *Window, params: *FileDialogParams) ?[*:0]const u8;
+    pub extern fn uiSaveFile(parent: *Window) ?[*:0]const u8;
+    pub extern fn uiSaveFileWithParams(parent: *Window, params: *FileDialogParams) ?[*:0]const u8;
     pub extern fn uiMsgBox(parent: *Window, title: [*:0]const u8, description: [*:0]const u8) void;
     pub extern fn uiMsgBoxError(parent: *Window, title: [*:0]const u8, description: [*:0]const u8) void;
 
