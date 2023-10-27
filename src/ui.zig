@@ -1377,7 +1377,7 @@ pub const Form = opaque {
         return uiFormPadded(f) == 1;
     }
     pub fn SetPadded(f: *Form, padded: bool) void {
-        uiFormPadded(f, @intFromBool(padded));
+        uiFormSetPadded(f, @intFromBool(padded));
     }
     pub fn New() !*Form {
         return uiNewForm() orelse return error.InitForm;
