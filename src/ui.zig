@@ -1502,7 +1502,7 @@ pub const Table = opaque {
         pub extern fn uiTableModelRowChanged(m: ?*Table.Model, index: c_int) void;
         pub extern fn uiTableModelRowDeleted(m: ?*Table.Model, oldIndex: c_int) void;
 
-        pub fn New(mh: *Handler) *Model {
+        pub fn New(mh: *Handler) !*Model {
             return uiNewTableModel(mh) orelse error.InitModel;
         }
         pub const Free = uiFreeTableModel;
