@@ -75,6 +75,11 @@ pub const InitOptions = extern struct {
     Size: usize,
 };
 
+pub const Stretchy = enum(c_int) {
+    stretch = 1,
+    dont_stretch = 0,
+};
+
 pub extern fn uiInit(options: *InitOptions) ?[*:0]const u8;
 pub extern fn uiUninit() void;
 pub extern fn uiFreeInitError(err: [*:0]const u8) void;
@@ -355,12 +360,8 @@ pub const Box = opaque {
     pub fn as_control(self: *Self) *Control {
         return @ptrCast(@alignCast(self));
     }
-    pub const Stretchy = enum(c_int) {
-        stretch = 1,
-        dont_stretch = 0,
-    };
 
-    pub extern fn uiBoxAppend(b: *Box, child: *Control, stretchy: Box.Stretchy) void;
+    pub extern fn uiBoxAppend(b: *Box, child: *Control, stretchy: Stretchy) void;
     pub extern fn uiBoxNumChildren(b: *Box) c_int;
     pub extern fn uiBoxDelete(b: *Box, index: c_int) void;
     pub extern fn uiBoxPadded(b: *Box) c_int;
@@ -1362,7 +1363,7 @@ pub const Form = opaque {
         return @ptrCast(@alignCast(self));
     }
 
-    pub extern fn uiFormAppend(f: *Form, label: [*:0]const u8, c: *Control, stretchy: c_int) void;
+    pub extern fn uiFormAppend(f: *Form, label: [*:0]const u8, c: *Control, stretchy: Stretchy) void;
     pub extern fn uiFormNumChildren(f: *Form) c_int;
     pub extern fn uiFormDelete(f: *Form, index: c_int) void;
     pub extern fn uiFormPadded(f: *Form) c_int;
