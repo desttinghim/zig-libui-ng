@@ -851,10 +851,10 @@ pub const FileDialogParams = extern struct {
         patternCount: usize,
         patterns: *[*:0]const u8,
     };
-    defaultPath: [*:0]const u8,
-    defaultName: [*:0]const u8,
+    defaultPath: ?[*:0]const u8,
+    defaultName: ?[*:0]const u8,
     filterCount: usize,
-    filters: *const Filter,
+    filters: ?*const Filter,
 };
 
 pub const Area = opaque {
@@ -1524,7 +1524,7 @@ pub const Table = opaque {
     };
     pub fn AppendColumn(t: *Table, name: [*:0]const u8, params: ColumnParameters) void {
         switch (params) {
-            .Text => |p| uiTableAppendTextColumn(t, name, p.text_column, p.text_editable, p.text_params),
+            .Text => |p| uiTableAppendTextColumn(t, name, p.text_column, p.editable_column, p.text_params),
             .Image => |p| uiTableAppendImageColumn(t, name, p.image_column),
             .ImageText => |p| uiTableAppendImageTextColumn(t, name, p.image_column, p.text_column, p.text_editable_column, p.text_params),
             .Checkbox => |p| uiTableAppendCheckboxColumn(t, name, p.checkbox_column, p.checkbox_editable_column),
