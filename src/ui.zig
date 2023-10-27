@@ -1526,8 +1526,8 @@ pub const Table = opaque {
         switch (params) {
             .Text => |p| uiTableAppendTextColumn(t, name, p.text_column, p.editable_column, p.text_params),
             .Image => |p| uiTableAppendImageColumn(t, name, p.image_column),
-            .ImageText => |p| uiTableAppendImageTextColumn(t, name, p.image_column, p.text_column, p.text_editable_column, p.text_params),
-            .Checkbox => |p| uiTableAppendCheckboxColumn(t, name, p.checkbox_column, p.checkbox_editable_column),
+            .ImageText => |p| uiTableAppendImageTextColumn(t, name, p.image_column, p.text_column, p.editable_column, p.text_params),
+            .Checkbox => |p| uiTableAppendCheckboxColumn(t, name, p.checkbox_column, p.editable_column),
             .CheckboxText => |p| uiTableAppendCheckboxTextColumn(t, name, p.checkbox_column, p.checkbox_editable_column, p.text_column, p.text_editable_column, p.text_params),
             .ProgressBar => |p| uiTableAppendProgressBarColumn(t, name, p.progress_column),
             .Button => |p| uiTableAppendButtonColumn(t, name, p.button_column, p.button_clickable_column),
@@ -1549,9 +1549,9 @@ pub const Table = opaque {
 
     pub extern fn uiTableAppendTextColumn(t: *Table, name: [*:0]const u8, textModelColumn: c_int, textEditableModelColumn: c_int, textParams: ?*Table.TextColumnOptionalParams) void;
     pub extern fn uiTableAppendImageColumn(t: *Table, name: [*:0]const u8, imageModelColumn: c_int) void;
-    pub extern fn uiTableAppendImageTextColumn(t: *Table, name: [*:0]const u8, imageModelColumn: c_int, textModelColumn: c_int, textEditableModelColumn: c_int, textParams: *Table.TextColumnOptionalParams) void;
+    pub extern fn uiTableAppendImageTextColumn(t: *Table, name: [*:0]const u8, imageModelColumn: c_int, textModelColumn: c_int, textEditableModelColumn: c_int, textParams: ?*Table.TextColumnOptionalParams) void;
     pub extern fn uiTableAppendCheckboxColumn(t: *Table, name: [*:0]const u8, checkboxModelColumn: c_int, checkboxEditableModelColumn: c_int) void;
-    pub extern fn uiTableAppendCheckboxTextColumn(t: *Table, name: [*:0]const u8, checkboxModelColumn: c_int, checkboxEditableModelColumn: c_int, textModelColumn: c_int, textEditableModelColumn: c_int, textParams: *Table.TextColumnOptionalParams) void;
+    pub extern fn uiTableAppendCheckboxTextColumn(t: *Table, name: [*:0]const u8, checkboxModelColumn: c_int, checkboxEditableModelColumn: c_int, textModelColumn: c_int, textEditableModelColumn: c_int, textParams: ?*Table.TextColumnOptionalParams) void;
     pub extern fn uiTableAppendProgressBarColumn(t: *Table, name: [*:0]const u8, progressModelColumn: c_int) void;
     pub extern fn uiTableAppendButtonColumn(t: *Table, name: [*:0]const u8, buttonModelColumn: c_int, buttonClickableModelColumn: c_int) void;
     pub extern fn uiTableHeaderVisible(t: *Table) c_int;
