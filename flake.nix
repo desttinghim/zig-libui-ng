@@ -21,6 +21,7 @@
                 zig.master-2023-10-16
                 pkgs.pkg-config
                 pkgs.gtk3
+                pkgs.gdb
               ];
             }; 
           };
