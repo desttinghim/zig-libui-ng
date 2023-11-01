@@ -32,6 +32,7 @@ pub fn Table(comptime T: type) type {
         model: *ui.Table.Model = undefined,
         data: BackingData = undefined,
         allocator: ?std.mem.Allocator = null,
+        button_callback: ?*const fn (*@This(), *T, usize, usize) void = null,
 
         // ---- Public API ----
 
@@ -64,6 +65,8 @@ pub fn Table(comptime T: type) type {
             self.data = data;
 
             self.allocator = allocator;
+
+            self.button_callback = null;
         }
 
         /// Calls libui function to free the table model. Does not free backing data.
@@ -292,9 +295,6 @@ pub fn Table(comptime T: type) type {
             const column = @as(usize, @intCast(columni));
             const self = from_model_handler(handler orelse return);
 
-            const value = value_opt orelse return;
-
-            const value_t = @as(ui.Table.Value.Type, value.GetType());
             const data = switch (self.data) {
                 .array_list => |list| item: {
                     if (list.items.len < row) {
@@ -304,6 +304,17 @@ pub fn Table(comptime T: type) type {
                 },
                 .const_slice => @panic("setCellValue called Table(T) with const slice backing, which is not allowed. Use an ArrayList instead."),
             };
+
+            const value = value_opt orelse {
+                if (self.button_callback) |button_callback| {
+                    button_callback(self, data, column, row);
+                } else {
+                    std.log.debug("setCellValue called with null value on column {}, row {}", .{ column, row });
+                }
+                return;
+            };
+
+            const value_t = @as(ui.Table.Value.Type, value.GetType());
 
             switch (column) {
                 inline 0...num_columns - 1 => |field_index| {

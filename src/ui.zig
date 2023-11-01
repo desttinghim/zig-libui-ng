@@ -1553,7 +1553,7 @@ pub const Table = opaque {
         },
         Button: struct {
             button_column: c_int,
-            button_clickable_column: c_int,
+            button_clickable: Editable,
         },
 
         pub const Editable = enum(c_int) {
@@ -1570,7 +1570,7 @@ pub const Table = opaque {
             .Checkbox => |p| uiTableAppendCheckboxColumn(t, name, p.checkbox_column, @intFromEnum(p.editable)),
             .CheckboxText => |p| uiTableAppendCheckboxTextColumn(t, name, p.checkbox_column, @intFromEnum(p.checkbox_editable), p.text_column, @intFromEnum(p.text_editable), p.text_params),
             .ProgressBar => |p| uiTableAppendProgressBarColumn(t, name, p.progress_column),
-            .Button => |p| uiTableAppendButtonColumn(t, name, p.button_column, p.button_clickable_column),
+            .Button => |p| uiTableAppendButtonColumn(t, name, p.button_column, @intFromEnum(p.button_clickable)),
         }
     }
     pub fn HeaderVisible(t: *Table) bool {

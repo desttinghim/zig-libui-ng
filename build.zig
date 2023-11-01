@@ -84,4 +84,25 @@ pub fn build(b: *std.Build) !void {
         const run_step = b.step("run-example-table", "Run the table example app");
         run_step.dependOn(&run_cmd.step);
     }
+
+    {
+        const exe = b.addExecutable(.{
+            .name = "crud",
+            .root_source_file = .{ .path = "examples/crud.zig" },
+            .target = target,
+            .optimize = optimize,
+        });
+        exe.addModule("ui", ui_module);
+        exe.addModule("ui-extras", ui_extras_module);
+        exe.linkLibrary(libui.artifact("ui"));
+        exe.subsystem = std.Target.SubSystem.Windows;
+
+        b.installArtifact(exe);
+
+        const run_cmd = b.addRunArtifact(exe);
+        run_cmd.step.dependOn(&exe.step);
+
+        const run_step = b.step("run-example-crud", "Run the CRUD example app");
+        run_step.dependOn(&run_cmd.step);
+    }
 }
