@@ -1,15 +1,14 @@
 pub const TableType = opaque {
-    pub const Int = struct {
-        data: c_int,
-    };
     pub const Checkbox = struct {
         data: c_int,
     };
     pub const Progress = struct {
         data: c_int,
     };
-    pub const Color = struct {};
-    pub const Image = struct {};
+    pub const Color = ui.Table.Value.ColorData;
+    pub const Image = struct {
+        data: *Image,
+    };
 };
 
 /// Comptime function for creating table handler from a struct. This is a convenience only,
@@ -136,12 +135,6 @@ pub fn Table(comptime T: type) type {
                 const field = struct_info.fields[column];
                 const name = std.fmt.comptimePrint("{s}", .{field.name});
                 switch (field.type) {
-                    TableType.Int => {
-                        table.AppendColumn(name, .{ .Checkbox = .{
-                            .checkbox_column = column,
-                            .editable = editable,
-                        } });
-                    },
                     TableType.Checkbox => {
                         table.AppendColumn(name, .{ .Checkbox = .{
                             .checkbox_column = column,
@@ -152,6 +145,19 @@ pub fn Table(comptime T: type) type {
                         table.AppendColumn(name, .{ .ProgressBar = .{
                             .progress_column = column,
                         } });
+                    },
+                    TableType.Image => {
+                        table.AppendColumn(name, .{ .Image = .{
+                            .image_column = column,
+                        } });
+                    },
+                    TableType.Color => {
+                        switch (params.row_background) {
+                            .Default => {},
+                            else => |color_column| {
+                                std.debug.assert(@as(usize, @intCast(@intFromEnum(color_column))) == column);
+                            },
+                        }
                     },
                     else => {
                         table.AppendColumn(name, .{ .Text = .{
@@ -193,12 +199,12 @@ pub fn Table(comptime T: type) type {
             return @intCast(num_columns); // comptime number based on number of fields in T
         }
 
-        /// Implementation of `columnType` for `ui.Table.Model.Handler`. Returns the number
-        /// of fields in struct `T`.
+        /// Implementation of `columnType` for `ui.Table.Model.Handler`.
+        /// - `ui.Table.Value.Type.Int` is used for checkboxes and progress bars - can also be referenced by other columns to check editability
+        /// - `ui.Table.Value.Type.Color` is used for setting the background color of rows
+        /// - `ui.Table.Value.Type.Image` is used for displaying images
+        /// - `ui.Table.Value.Type.Text`  is used for strings. For user editable integers and floats, this is used to allow editing.
         fn columnType(handler: *ui.Table.Model.Handler, _: *ui.Table.Model, columni: c_int) callconv(.C) ui.Table.Value.Type {
-            // _ = handler;
-            // _ = columni;
-            // return .String; // Always return string
             _ = handler;
 
             const column = @as(usize, @intCast(columni));
@@ -207,16 +213,19 @@ pub fn Table(comptime T: type) type {
                 inline 0...num_columns - 1 => |field_index| {
                     const field = struct_info.fields[field_index];
                     return switch (field.type) {
-                        TableType.Int, TableType.Checkbox, TableType.Progress => .Int,
+                        TableType.Checkbox, TableType.Progress => .Int,
                         TableType.Color => .Color,
                         TableType.Image => .Image,
                         else => .String,
                     };
                 },
-                else => @panic("Column out of bounds"),
+                else => @panic("columnType column parameter out of bounds"),
             }
         }
 
+        /// Implementation of `numRows` for `ui.Table.Model.Handler`.
+        /// If an array list is used for the backing data, it returns `array_list.items.len`.
+        /// If a const slice is used for the backing data, it return `slice.len`.
         fn numRows(handler: ?*ui.Table.Model.Handler, _: ?*ui.Table.Model) callconv(.C) c_int {
             const self = from_model_handler(handler orelse return 0);
             const len = switch (self.data) {
@@ -226,6 +235,8 @@ pub fn Table(comptime T: type) type {
             return @as(c_int, @intCast(len));
         }
 
+        /// Implementation of `cellValue` for `ui.Table.Model.Handler`.
+        /// The value returned is based on the type of the field in struct `T`.
         fn cellValue(handler: ?*ui.Table.Model.Handler, _: ?*ui.Table.Model, rowi: c_int, columni: c_int) callconv(.C) ?*ui.Table.Value {
             const row = @as(usize, @intCast(rowi));
             const column = @as(usize, @intCast(columni));
@@ -235,52 +246,45 @@ pub fn Table(comptime T: type) type {
                 .array_list => |list| list.items,
                 .const_slice => |slice| slice,
             };
-            if (slice.len < row) @panic("row outside of bounds");
+            if (slice.len < row) @panic("cellValue row parameter out of bounds");
             const data = &slice[row];
 
+            var value_param: ?ui.Table.Value.TypeParameters = null;
             switch (column) {
                 inline 0...num_columns - 1 => |field_index| {
-                    // const field_name = struct_info.fields[field_index].name;
-                    // var buffer: [1048]u8 = undefined;
-                    // const string = std.fmt.bufPrintZ(&buffer, "{}", .{@field(data, field_name)}) catch @panic("Formatting column " ++ field_name);
-                    // return ui.Table.Value.New(.{ .String = string }) catch @panic("Unable to create new ui.Table.Value");
-
                     const field = struct_info.fields[field_index];
 
                     switch (field.type) {
-                        TableType.Int, TableType.Checkbox, TableType.Progress => {
-                            return ui.Table.Value.New(.{ .Int = @field(data, field.name).data }) catch @panic("Unable to create new ui.Table.Value");
+                        TableType.Checkbox, TableType.Progress => {
+                            value_param = .{ .Int = @field(data, field.name).data };
                         },
                         TableType.Color => {
-                            @compileError("TableType.Color is unimplemented");
+                            value_param = .{ .Color = @field(data, field.name) };
                         },
                         TableType.Image => {
                             @compileError("TableType.Image is unimplemented");
                         },
                         [:0]const u8 => {
                             const string = @field(data, field.name);
-                            return ui.Table.Value.New(.{ .String = string }) catch @panic("Unable to create new ui.Table.Value");
+                            value_param = .{ .String = string };
                         },
                         else => |t| {
                             var buffer: [1048]u8 = undefined;
                             const value = @field(data, field.name);
                             // TODO: allow user to configure float precision
+                            // TODO: allow user to configure int base
                             const format_string = if (@typeInfo(t) == .Float) "{d:.2}" else "{}";
                             const string = std.fmt.bufPrintZ(&buffer, format_string, .{value}) catch @panic("Formatting column " ++ field.name);
-                            return ui.Table.Value.New(.{ .String = string }) catch @panic("Unable to create new ui.Table.Value");
+                            value_param = .{ .String = string };
                         },
                     }
                 },
-                else => @panic(""),
+                else => @panic("cellValue column parameter out of bounds"),
             }
 
-            // const index = row * self.column_def.len + column;
-            // const value = self.array_list.items[index];
-            // switch (self.column_def[column]) {
-            //     .String => return ui.Table.Value.New(.{ .String = value.String.ptr }) catch @panic(""),
-            //     .Int => return ui.Table.Value.New(.{ .Int = value.Int }) catch @panic(""),
-            //     else => @panic("unimplemented"),
-            // }
+            const value = value_param orelse @panic("Value Param never set in cellValue. This is a bug in ziglibui");
+
+            return ui.Table.Value.New(value) catch @panic("cellValue unable to call ui.Table.Value.New()");
         }
 
         fn setCellValue(handler: ?*ui.Table.Model.Handler, _: ?*ui.Table.Model, rowi: c_int, columni: c_int, value_opt: ?*const ui.Table.Value) callconv(.C) void {
@@ -294,24 +298,26 @@ pub fn Table(comptime T: type) type {
             const data = switch (self.data) {
                 .array_list => |list| item: {
                     if (list.items.len < row) {
-                        @panic("setCellValue row outside of list bounds");
+                        @panic("setCellValue row out of list bounds");
                     }
                     break :item &list.items[row];
                 },
-                .const_slice => @panic("Cannot write to const slice"),
+                .const_slice => @panic("setCellValue called Table(T) with const slice backing, which is not allowed. Use an ArrayList instead."),
             };
 
             switch (column) {
                 inline 0...num_columns - 1 => |field_index| {
                     const field = struct_info.fields[field_index];
+                    const previous_value = @field(data, field.name);
                     switch (field.type) {
-                        TableType.Int, TableType.Checkbox, TableType.Progress => {
+                        TableType.Checkbox, TableType.Progress => {
                             std.debug.assert(value_t == .Int);
                             @field(data, field.name).data = value.Int();
                         },
                         TableType.Color => {
                             std.debug.assert(value_t == .Color);
-                            @compileError("TableType.Color is unimplemented");
+                            @field(data, field.name) = value.Color();
+                            // @compileError("TableType.Color is unimplemented");
                         },
                         TableType.Image => {
                             std.debug.assert(value_t == .Image);
@@ -322,23 +328,24 @@ pub fn Table(comptime T: type) type {
                             const string = std.mem.span(value.String());
                             if (self.allocator) |alloc| {
                                 alloc.free(@field(data, field.name)); // Free previous value
-                                @field(data, field.name) = alloc.dupeZ(u8, string) catch @panic("");
+                                @field(data, field.name) = alloc.dupeZ(u8, string) catch @panic("setCellValue error running dupeZ on string");
                             } else {
                                 std.log.info("No table allocator, could not store new value of string: {s}", .{string});
                             }
-                            // const string = @field(data, field.name);
-                            // return ui.Table.Value.New(.{ .String = string }) catch @panic("Unable to create new ui.Table.Value");
                         },
                         else => |t| {
                             if (@typeInfo(t) == .Int) {
                                 std.debug.assert(value_t == .String);
                                 const string = std.mem.span(value.String());
-                                const int_value = std.fmt.parseInt(t, string, 10) catch @panic("");
+                                // TODO: allow API user to define base
+                                const int_value = std.fmt.parseInt(t, string, 10) catch |e| switch (e) {
+                                    error.Overflow => previous_value,
+                                    error.InvalidCharacter => previous_value,
+                                };
                                 @field(data, field.name) = int_value;
                             } else if (@typeInfo(t) == .Float) {
                                 std.debug.assert(value_t == .String);
                                 const string = std.mem.span(value.String());
-                                const previous_value = @field(data, field.name);
                                 const float_value = std.fmt.parseFloat(t, string) catch |e| switch (e) {
                                     error.InvalidCharacter => previous_value,
                                 };
@@ -347,35 +354,6 @@ pub fn Table(comptime T: type) type {
                                 @panic("Unimplemented type");
                             }
                         },
-                        // .Int => |_| {
-                        //     switch (value_t) {
-                        //         .String => {
-                        //             const string = std.mem.span(value.String());
-                        //             @field(data, struct_info.fields[field_index].name) = std.fmt.parseInt(field.type, string, 10) catch @panic("");
-                        //         },
-                        //         else => @panic("unimplemented"),
-                        //     }
-                        // },
-                        // .Float => |_| {
-                        //     switch (value_t) {
-                        //         .String => {
-                        //             const string = std.mem.span(value.String());
-                        //             @field(data, struct_info.fields[field_index].name) = std.fmt.parseFloat(field.type, string, 10) catch @panic("");
-                        //         },
-                        //         else => @panic("unimplemented"),
-                        //     }
-                        // },
-                        // .Pointer => |_| {
-                        //     switch (value_t) {
-                        //         .String => {
-                        //             const string = std.mem.span(value.String());
-                        //             // TODO: Does this string need to be duped?
-                        //             @field(data, struct_info.fields[field_index].name) = string;
-                        //         },
-                        //         else => @panic("unimplemented"),
-                        //     }
-                        // },
-                        // else => @panic(""),
                     }
                 },
                 else => @panic(""),

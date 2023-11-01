@@ -41,12 +41,12 @@ pub fn main() !void {
     // Initialize the `extras.Table(TestStruct)` and pass it a const slice
     const const_data = [_]TestStruct{
         .{ .field_1 = 1, .field_2 = "hello", .field_3 = .{ .data = 0 }, .field_4 = .{ .data = 0 } },
-        .{ .field_1 = 2, .field_2 = "world", .field_3 = .{ .data = 1 }, .field_4 = .{ .data = 50 } },
+        .{ .field_1 = 2, .field_2 = "world", .field_3 = .{ .data = 1 }, .field_4 = .{ .data = 50 }, .color = .{ .r = 1, .g = 0, .b = 0, .a = 1 } },
     };
     try const_table.init(.{ .const_slice = &const_data }, null);
     defer const_table.deinit(); // Defer deinitalization of `extras.Table(TestStruct)` to end of scope
 
-    const const_table_view = try const_table.NewViewDefaultColumns(.{});
+    const const_table_view = try const_table.NewViewDefaultColumns(.{ .row_background = @enumFromInt(5) });
     vbox.Append(const_table_view.as_control(), .stretch);
     // ----
 
@@ -102,4 +102,5 @@ const TestStruct = struct {
     field_3: extras.TableType.Checkbox,
     field_4: extras.TableType.Progress,
     float: f32 = 0.0,
+    color: extras.TableType.Color = .{ .r = 0, .g = 0, .b = 0, .a = 0 },
 };

@@ -1466,11 +1466,18 @@ pub const Table = opaque {
             Descending = 2,
         };
         pub const GetType = uiTableValueGetType;
+
+        pub const ColorData = struct {
+            r: f64,
+            g: f64,
+            b: f64,
+            a: f64,
+        };
         pub const TypeParameters = union(Type) {
             String: [*:0]const u8,
             Image: *ui.Image,
             Int: c_int,
-            Color: struct { r: f64, g: f64, b: f64, a: f64 },
+            Color: ColorData,
         };
         pub fn New(t: TypeParameters) !*Value {
             return switch (t) {
@@ -1483,7 +1490,11 @@ pub const Table = opaque {
         pub const String = uiTableValueString;
         pub const Image = uiTableValueImage;
         pub const Int = uiTableValueInt;
-        pub const Color = uiTableValueColor;
+        pub fn Color(v: *const Table.Value) ColorData {
+            var color: ColorData = undefined;
+            v.uiTableValueColor(&color.r, &color.g, &color.b, &color.a);
+            return color;
+        }
     };
     pub const Model = opaque {
         pub const Handler = extern struct {
