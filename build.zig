@@ -16,6 +16,14 @@ pub fn build(b: *std.Build) !void {
         .source_file = .{ .path = "src/ui.zig" },
     });
 
+    const ui_extras_module = b.addModule("ui-extras", .{
+        .source_file = .{ .path = "src/extras.zig" },
+        .dependencies = &.{.{
+            .name = "ui",
+            .module = ui_module,
+        }},
+    });
+
     {
         const exe = b.addExecutable(.{
             .name = "hello",
@@ -64,6 +72,7 @@ pub fn build(b: *std.Build) !void {
             .optimize = optimize,
         });
         exe.addModule("ui", ui_module);
+        exe.addModule("ui-extras", ui_extras_module);
         exe.linkLibrary(libui.artifact("ui"));
         exe.subsystem = std.Target.SubSystem.Windows;
 

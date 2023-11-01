@@ -1486,8 +1486,6 @@ pub const Table = opaque {
         pub const Color = uiTableValueColor;
     };
     pub const Model = opaque {
-        pub const ColumnNeverEditable: c_int = -1;
-        pub const ColumnAlwaysEditable: c_int = -2;
         pub const Handler = extern struct {
             NumColumns: *const fn (*Handler, *Model) callconv(.C) c_int,
             ColumnType: *const fn (*Handler, *Model, c_int) callconv(.C) Value.Type,
@@ -1514,21 +1512,52 @@ pub const Table = opaque {
         ColorModelColumn: c_int,
     };
     pub const ColumnParameters = union(enum) {
-        Text: struct { text_column: c_int, editable_column: c_int, text_params: ?*TextColumnOptionalParams },
-        Image: struct { image_column: c_int },
-        ImageText: struct { image_column: c_int, text_column: c_int, editable_column: c_int, text_params: ?*TextColumnOptionalParams },
-        Checkbox: struct { checkbox_column: c_int, editable_column: c_int },
-        CheckboxText: struct { checkbox_column: c_int, checkbox_editable_column: c_int, text_column: c_int, text_editable_column: c_int, text_params: ?*TextColumnOptionalParams },
-        ProgressBar: struct { progress_column: c_int },
-        Button: struct { button_column: c_int, button_clickable_column: c_int },
+        Text: struct {
+            text_column: c_int,
+            editable: Editable,
+            text_params: ?*TextColumnOptionalParams,
+        },
+        Image: struct {
+            image_column: c_int,
+        },
+        ImageText: struct {
+            image_column: c_int,
+            text_column: c_int,
+            editable: Editable,
+            text_params: ?*TextColumnOptionalParams,
+        },
+        Checkbox: struct {
+            checkbox_column: c_int,
+            editable: Editable,
+        },
+        CheckboxText: struct {
+            checkbox_column: c_int,
+            checkbox_editable: Editable,
+            text_column: c_int,
+            text_editable: Editable,
+            text_params: ?*TextColumnOptionalParams,
+        },
+        ProgressBar: struct {
+            progress_column: c_int,
+        },
+        Button: struct {
+            button_column: c_int,
+            button_clickable_column: c_int,
+        },
+
+        pub const Editable = enum(c_int) {
+            Never = -1,
+            Always = -2,
+            _,
+        };
     };
     pub fn AppendColumn(t: *Table, name: [*:0]const u8, params: ColumnParameters) void {
         switch (params) {
-            .Text => |p| uiTableAppendTextColumn(t, name, p.text_column, p.editable_column, p.text_params),
+            .Text => |p| uiTableAppendTextColumn(t, name, p.text_column, @intFromEnum(p.editable), p.text_params),
             .Image => |p| uiTableAppendImageColumn(t, name, p.image_column),
-            .ImageText => |p| uiTableAppendImageTextColumn(t, name, p.image_column, p.text_column, p.editable_column, p.text_params),
-            .Checkbox => |p| uiTableAppendCheckboxColumn(t, name, p.checkbox_column, p.editable_column),
-            .CheckboxText => |p| uiTableAppendCheckboxTextColumn(t, name, p.checkbox_column, p.checkbox_editable_column, p.text_column, p.text_editable_column, p.text_params),
+            .ImageText => |p| uiTableAppendImageTextColumn(t, name, p.image_column, p.text_column, @intFromEnum(p.editable), p.text_params),
+            .Checkbox => |p| uiTableAppendCheckboxColumn(t, name, p.checkbox_column, @intFromEnum(p.editable)),
+            .CheckboxText => |p| uiTableAppendCheckboxTextColumn(t, name, p.checkbox_column, @intFromEnum(p.checkbox_editable), p.text_column, @intFromEnum(p.text_editable), p.text_params),
             .ProgressBar => |p| uiTableAppendProgressBarColumn(t, name, p.progress_column),
             .Button => |p| uiTableAppendButtonColumn(t, name, p.button_column, p.button_clickable_column),
         }
