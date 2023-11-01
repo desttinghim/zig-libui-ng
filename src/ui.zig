@@ -1515,7 +1515,7 @@ pub const Table = opaque {
         Text: struct {
             text_column: c_int,
             editable: Editable,
-            text_params: ?*TextColumnOptionalParams,
+            text_params: ?*TextColumnOptionalParams = null,
         },
         Image: struct {
             image_column: c_int,
@@ -1524,7 +1524,7 @@ pub const Table = opaque {
             image_column: c_int,
             text_column: c_int,
             editable: Editable,
-            text_params: ?*TextColumnOptionalParams,
+            text_params: ?*TextColumnOptionalParams = null,
         },
         Checkbox: struct {
             checkbox_column: c_int,
@@ -1535,7 +1535,7 @@ pub const Table = opaque {
             checkbox_editable: Editable,
             text_column: c_int,
             text_editable: Editable,
-            text_params: ?*TextColumnOptionalParams,
+            text_params: ?*TextColumnOptionalParams = null,
         },
         ProgressBar: struct {
             progress_column: c_int,

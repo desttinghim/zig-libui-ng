@@ -32,6 +32,7 @@ pub fn Table(comptime T: type) type {
         handler: ui.Table.Model.Handler = undefined,
         model: *ui.Table.Model = undefined,
         data: BackingData = undefined,
+        allocator: ?std.mem.Allocator = null,
 
         // ---- Public API ----
 
@@ -48,25 +49,45 @@ pub fn Table(comptime T: type) type {
             const self = try allocator.create(@This());
             errdefer allocator.destroy(self);
 
-            try self.init(data);
+            try self.init(data, allocator);
 
             return self;
         }
 
         /// Initializes a Table(T) struct in memory. Creates the libui Table vtable, allocates
         /// a libui table model, and stores the backing data for later use.
-        pub fn init(self: *@This(), data: BackingData) !void {
+        pub fn init(self: *@This(), data: BackingData, allocator: ?std.mem.Allocator) !void {
             self.handler = getHandler();
 
             self.model = try ui.Table.Model.New(&self.handler);
             errdefer ui.Table.Model.Free(self.model);
 
             self.data = data;
+
+            self.allocator = allocator;
         }
 
         /// Calls libui function to free the table model. Does not free backing data.
         pub fn deinit(self: *@This()) void {
             ui.Table.Model.Free(self.model);
+
+            switch (self.data) {
+                .const_slice => {}, // nothing to do
+                .array_list => |list| {
+                    const allocator = self.allocator orelse return;
+                    for (list.items) |data| {
+                        inline for (0..num_columns) |column| {
+                            const field = struct_info.fields[column];
+                            switch (field.type) {
+                                [:0]const u8 => {
+                                    allocator.free(@field(data, field.name));
+                                },
+                                else => {},
+                            }
+                        }
+                    }
+                },
+            }
         }
 
         /// Calls libui function to free the table model and frees allocated memory.
@@ -90,14 +111,27 @@ pub fn Table(comptime T: type) type {
             };
         };
 
-        /// Creates a new `ui.Table` widget and automatically populates the columns based
-        /// on the struct passed to `extras.Table(T)`. The table is owned by the caller.
-        pub fn NewViewDefaultColumns(self: *const @This(), params: ViewParams) !*ui.Table {
+        /// Creates a new `ui.Table` widget with `Table(T)` as the model.
+        /// The table is owned by the caller. To automatically populate columns
+        /// based on the struct `T`, use `NewViewDefaultColumns()`.
+        pub fn NewView(self: *const @This(), params: ViewParams) !*ui.Table {
             var ui_params = ui.Table.Params{
                 .Model = self.model,
                 .RowBackgroundColorModelColumn = @intFromEnum(params.row_background),
             };
             var table = try ui.Table.New(&ui_params);
+            return table;
+        }
+
+        /// Creates a new `ui.Table` widget and automatically populates the columns based
+        /// on the struct `T`. The table is owned by the caller.
+        /// For more control over the resulting columns, use `NewView()`.
+        pub fn NewViewDefaultColumns(self: *const @This(), params: ViewParams) !*ui.Table {
+            var table = try self.NewView(params);
+            const editable: ui.Table.ColumnParameters.Editable = switch (self.data) {
+                .const_slice => .Never,
+                .array_list => .Always,
+            };
             inline for (0..num_columns) |column| {
                 const field = struct_info.fields[column];
                 const name = std.fmt.comptimePrint("{s}", .{field.name});
@@ -105,13 +139,13 @@ pub fn Table(comptime T: type) type {
                     TableType.Int => {
                         table.AppendColumn(name, .{ .Checkbox = .{
                             .checkbox_column = column,
-                            .editable = .Never,
+                            .editable = editable,
                         } });
                     },
                     TableType.Checkbox => {
                         table.AppendColumn(name, .{ .Checkbox = .{
                             .checkbox_column = column,
-                            .editable = .Never,
+                            .editable = editable,
                         } });
                     },
                     TableType.Progress => {
@@ -122,7 +156,7 @@ pub fn Table(comptime T: type) type {
                     else => {
                         table.AppendColumn(name, .{ .Text = .{
                             .text_column = column,
-                            .editable = .Never,
+                            .editable = editable,
                             .text_params = null,
                         } });
                     },
@@ -227,10 +261,12 @@ pub fn Table(comptime T: type) type {
                             const string = @field(data, field.name);
                             return ui.Table.Value.New(.{ .String = string }) catch @panic("Unable to create new ui.Table.Value");
                         },
-                        else => {
+                        else => |t| {
                             var buffer: [1048]u8 = undefined;
                             const value = @field(data, field.name);
-                            const string = std.fmt.bufPrintZ(&buffer, "{}", .{value}) catch @panic("Formatting column " ++ field.name);
+                            // TODO: allow user to configure float precision
+                            const format_string = if (@typeInfo(t) == .Float) "{d:.2}" else "{}";
+                            const string = std.fmt.bufPrintZ(&buffer, format_string, .{value}) catch @panic("Formatting column " ++ field.name);
                             return ui.Table.Value.New(.{ .String = string }) catch @panic("Unable to create new ui.Table.Value");
                         },
                     }
@@ -268,36 +304,78 @@ pub fn Table(comptime T: type) type {
             switch (column) {
                 inline 0...num_columns - 1 => |field_index| {
                     const field = struct_info.fields[field_index];
-                    switch (@typeInfo(field.type)) {
-                        .Int => |_| {
-                            switch (value_t) {
-                                .String => {
-                                    const string = std.mem.span(value.String());
-                                    @field(data, struct_info.fields[field_index].name) = std.fmt.parseInt(field.type, string, 10) catch @panic("");
-                                },
-                                else => @panic("unimplemented"),
+                    switch (field.type) {
+                        TableType.Int, TableType.Checkbox, TableType.Progress => {
+                            std.debug.assert(value_t == .Int);
+                            @field(data, field.name).data = value.Int();
+                        },
+                        TableType.Color => {
+                            std.debug.assert(value_t == .Color);
+                            @compileError("TableType.Color is unimplemented");
+                        },
+                        TableType.Image => {
+                            std.debug.assert(value_t == .Image);
+                            @compileError("TableType.Image is unimplemented");
+                        },
+                        [:0]const u8 => {
+                            std.debug.assert(value_t == .String);
+                            const string = std.mem.span(value.String());
+                            if (self.allocator) |alloc| {
+                                alloc.free(@field(data, field.name)); // Free previous value
+                                @field(data, field.name) = alloc.dupeZ(u8, string) catch @panic("");
+                            } else {
+                                std.log.info("No table allocator, could not store new value of string: {s}", .{string});
+                            }
+                            // const string = @field(data, field.name);
+                            // return ui.Table.Value.New(.{ .String = string }) catch @panic("Unable to create new ui.Table.Value");
+                        },
+                        else => |t| {
+                            if (@typeInfo(t) == .Int) {
+                                std.debug.assert(value_t == .String);
+                                const string = std.mem.span(value.String());
+                                const int_value = std.fmt.parseInt(t, string, 10) catch @panic("");
+                                @field(data, field.name) = int_value;
+                            } else if (@typeInfo(t) == .Float) {
+                                std.debug.assert(value_t == .String);
+                                const string = std.mem.span(value.String());
+                                const previous_value = @field(data, field.name);
+                                const float_value = std.fmt.parseFloat(t, string) catch |e| switch (e) {
+                                    error.InvalidCharacter => previous_value,
+                                };
+                                @field(data, field.name) = float_value;
+                            } else {
+                                @panic("Unimplemented type");
                             }
                         },
-                        .Float => |_| {
-                            switch (value_t) {
-                                .String => {
-                                    const string = std.mem.span(value.String());
-                                    @field(data, struct_info.fields[field_index].name) = std.fmt.parseFloat(field.type, string, 10) catch @panic("");
-                                },
-                                else => @panic("unimplemented"),
-                            }
-                        },
-                        .Pointer => |_| {
-                            switch (value_t) {
-                                .String => {
-                                    const string = std.mem.span(value.String());
-                                    // TODO: Does this string need to be duped?
-                                    @field(data, struct_info.fields[field_index].name) = string;
-                                },
-                                else => @panic("unimplemented"),
-                            }
-                        },
-                        else => @panic(""),
+                        // .Int => |_| {
+                        //     switch (value_t) {
+                        //         .String => {
+                        //             const string = std.mem.span(value.String());
+                        //             @field(data, struct_info.fields[field_index].name) = std.fmt.parseInt(field.type, string, 10) catch @panic("");
+                        //         },
+                        //         else => @panic("unimplemented"),
+                        //     }
+                        // },
+                        // .Float => |_| {
+                        //     switch (value_t) {
+                        //         .String => {
+                        //             const string = std.mem.span(value.String());
+                        //             @field(data, struct_info.fields[field_index].name) = std.fmt.parseFloat(field.type, string, 10) catch @panic("");
+                        //         },
+                        //         else => @panic("unimplemented"),
+                        //     }
+                        // },
+                        // .Pointer => |_| {
+                        //     switch (value_t) {
+                        //         .String => {
+                        //             const string = std.mem.span(value.String());
+                        //             // TODO: Does this string need to be duped?
+                        //             @field(data, struct_info.fields[field_index].name) = string;
+                        //         },
+                        //         else => @panic("unimplemented"),
+                        //     }
+                        // },
+                        // else => @panic(""),
                     }
                 },
                 else => @panic(""),
