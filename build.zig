@@ -87,6 +87,46 @@ pub fn build(b: *std.Build) !void {
 
     {
         const exe = b.addExecutable(.{
+            .name = "counter",
+            .root_source_file = .{ .path = "examples/counter.zig" },
+            .target = target,
+            .optimize = optimize,
+        });
+        exe.addModule("ui", ui_module);
+        exe.linkLibrary(libui.artifact("ui"));
+        exe.subsystem = std.Target.SubSystem.Windows;
+
+        b.installArtifact(exe);
+
+        const run_cmd = b.addRunArtifact(exe);
+        run_cmd.step.dependOn(&exe.step);
+
+        const run_step = b.step("run-example-counter", "Run the counter example app");
+        run_step.dependOn(&run_cmd.step);
+    }
+
+    {
+        const exe = b.addExecutable(.{
+            .name = "temperature-converter",
+            .root_source_file = .{ .path = "examples/temperature-converter.zig" },
+            .target = target,
+            .optimize = optimize,
+        });
+        exe.addModule("ui", ui_module);
+        exe.linkLibrary(libui.artifact("ui"));
+        exe.subsystem = std.Target.SubSystem.Windows;
+
+        b.installArtifact(exe);
+
+        const run_cmd = b.addRunArtifact(exe);
+        run_cmd.step.dependOn(&exe.step);
+
+        const run_step = b.step("run-example-temperature-converter", "Run the temperature converter example app");
+        run_step.dependOn(&run_cmd.step);
+    }
+
+    {
+        const exe = b.addExecutable(.{
             .name = "crud",
             .root_source_file = .{ .path = "examples/crud.zig" },
             .target = target,
