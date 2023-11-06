@@ -154,6 +154,8 @@ pub const Control = extern struct {
     }
 };
 
+/// Window is a top-level `Control` that contains all other `Control`s. A Window is needed
+/// to display anything to the screen. Dialog boxes require a parent Window.
 pub const Window = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -323,6 +325,7 @@ pub const Window = opaque {
     pub const MsgBoxError = uiMsgBoxError;
 };
 
+/// `Button` is a clickable control that can run a callback when clicked.
 pub const Button = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -355,6 +358,8 @@ pub const Button = opaque {
     }
 };
 
+/// `Box` is a container control that will arrange it's children in a vertical or
+/// horizontal line.
 pub const Box = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -395,6 +400,7 @@ pub const Box = opaque {
     }
 };
 
+/// `Checkbox` is a clickable control that toggles between an off and on state.
 pub const Checkbox = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -436,6 +442,8 @@ pub const Checkbox = opaque {
     }
 };
 
+/// `Entry` is a single line text entry control. See MultilineEntry for a more advanced
+/// text entry control.
 pub const Entry = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -477,6 +485,7 @@ pub const Entry = opaque {
     }
 };
 
+/// Label is a control for displaying read-only text.
 pub const Label = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -494,6 +503,7 @@ pub const Label = opaque {
     }
 };
 
+/// Tab is a container control that switches between multiple pages using tabs.
 pub const Tab = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -524,6 +534,9 @@ pub const Tab = opaque {
     }
 };
 
+/// Group is container control that takes a single child that will be visually
+/// separated from surrounding controls. `Group` is usually used along with another
+/// container.
 pub const Group = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -551,6 +564,8 @@ pub const Group = opaque {
     }
 };
 
+/// Spinbox is a control for numerical input that allows users to either type in their
+/// desired value or use up and down buttons to increment or decrement the value.
 pub const Spinbox = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -582,6 +597,7 @@ pub const Spinbox = opaque {
     }
 };
 
+/// Slider is a control that allows users to select a value within a specified range.
 pub const Slider = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -613,6 +629,7 @@ pub const Slider = opaque {
     }
 };
 
+/// ProgressBar is a control that is used to indicate progress.
 pub const ProgressBar = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -630,6 +647,7 @@ pub const ProgressBar = opaque {
     }
 };
 
+/// Seperator is a control for visually separating controls.
 pub const Separator = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -651,6 +669,8 @@ pub const Separator = opaque {
     }
 };
 
+/// Combobox is a control that allows users to select a single value from a predefined list.
+/// Uses a dropdown to display the selection to the user.
 pub const Combobox = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -680,6 +700,8 @@ pub const Combobox = opaque {
     }
 };
 
+/// EditableCombobox is a control that allows users to select a value from a list or enter
+/// a custom value if it is not present.
 pub const EditableCombobox = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -701,6 +723,9 @@ pub const EditableCombobox = opaque {
     }
 };
 
+/// RadioButtons is a control that allows users to select from a list of values. All values
+/// are shown on the screen at the same time, and an visual indicator is used to inform the
+/// use of the current selection.
 pub const RadioButtons = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -725,6 +750,7 @@ pub const RadioButtons = opaque {
 pub const struct_tm = opaque {};
 pub const tm = struct_tm;
 
+/// DateTimePicker is a control that allows the user to select a date and/or time.
 pub const DateTimePicker = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -755,6 +781,7 @@ pub const DateTimePicker = opaque {
     }
 };
 
+/// MultilineEntry is a control that allows entering multiple lines of text.
 pub const MultilineEntry = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -792,6 +819,8 @@ pub const MultilineEntry = opaque {
     }
 };
 
+/// MenuItem is a control for a single item within a `Menu`. Must be created using one of
+/// the `Append` functions on `Menu`.
 pub const MenuItem = opaque {
     pub extern fn uiMenuItemEnable(m: *MenuItem) void;
     pub extern fn uiMenuItemDisable(m: *MenuItem) void;
@@ -810,6 +839,8 @@ pub const MenuItem = opaque {
     }
 };
 
+/// Menu is a control that shows a drop down list of `MenuItem`s when clicked. There
+/// can be multiple `Menu`s, each with their own name.
 pub const Menu = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -845,6 +876,7 @@ pub const Menu = opaque {
     }
 };
 
+/// Structure to pass to `Window.OpenFileWithParams`
 pub const FileDialogParams = extern struct {
     pub const Filter = extern struct {
         name: [*:0]const u8,
@@ -857,6 +889,7 @@ pub const FileDialogParams = extern struct {
     filters: ?[*]const Filter,
 };
 
+/// Area is a control that allows drawing to a canvas using geometric shapes and lines.
 pub const Area = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -1274,6 +1307,7 @@ pub const OpenTypeFeatures = opaque {
     }
 };
 
+/// AttributedString is a control that allows for complex text rendering.
 pub const AttributedString = opaque {
     pub const ForEachAttributeFunc = *const fn (*const AttributedString, *const Attribute, usize, usize, ?*anyopaque) callconv(.C) ui.ForEach;
     pub fn New() !*AttributedString {
@@ -1319,6 +1353,7 @@ pub const FontDescriptor = extern struct {
     pub const Free = uiFreeFontDescriptor;
 };
 
+/// FontButton is a control that displays a font select dialog when it is clicked.
 pub const FontButton = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -1338,6 +1373,14 @@ pub const FontButton = opaque {
     pub const FreeFont = uiFreeFontButtonFont;
 };
 
+pub const ColorValue = struct {
+    red: f64,
+    green: f64,
+    blue: f64,
+    alpha: f64,
+};
+
+/// Allows the user to select a color.
 pub const ColorButton = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -1349,14 +1392,33 @@ pub const ColorButton = opaque {
     pub extern fn uiColorButtonOnChanged(b: *ColorButton, f: ?*const fn (?*ColorButton, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
     pub extern fn uiNewColorButton() ?*ColorButton;
 
-    pub const Color = uiColorButtonColor;
-    pub const SetColor = uiColorButtonSetColor;
+    pub fn Color(cb: *const ColorButton) ColorValue {
+        var color_value: ColorValue = undefined;
+        uiColorButtonColor(
+            cb,
+            color_value.red,
+            color_value.green,
+            color_value.blue,
+            color_value.alpha,
+        );
+        return color_value;
+    }
+    pub fn SetColor(cb: *const ColorButton, color_value: ColorValue) void {
+        uiColorButtonSetColor(
+            cb,
+            color_value.red,
+            color_value.green,
+            color_value.alpha,
+        );
+    }
     pub const OnChanged = uiColorButtonOnChanged;
     pub fn New() !*ColorButton {
         return uiNewColorButton() orelse error.InitColorButton;
     }
 };
 
+/// Container for forms. Each widgets gets a label on the left side and the actual control
+/// on the right.
 pub const Form = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -1384,6 +1446,9 @@ pub const Form = opaque {
     }
 };
 
+/// The Grid container allows the developer to define a grid of a custom size and position
+/// controls within it. Controls may span multiple cells of the grid. Useful for more
+/// advanced layouts.
 pub const Grid = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -1424,7 +1489,8 @@ pub const Grid = opaque {
     }
 };
 
-/// Contains an image to be used as a TableValue. Not derived from Control.
+/// The Image struct contains an image to be used as a TableValue. Image is not derived
+/// from Control and may not be added to the Control layout tree.
 pub const Image = opaque {
     pub extern fn uiNewImage(width: f64, height: f64) ?*ui.Image;
     pub extern fn uiFreeImage(i: *ui.Image) void;
@@ -1437,6 +1503,8 @@ pub const Image = opaque {
     pub const Free = uiFreeImage;
 };
 
+/// The Table control is an advanced control that allows viewing and editing data in a
+/// tabular format.
 pub const Table = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
