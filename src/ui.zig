@@ -747,10 +747,55 @@ pub const RadioButtons = opaque {
     }
 };
 
-pub const struct_tm = opaque {};
-pub const tm = struct_tm;
+/// Based on `struct tm` from libc `time.h`
+/// Fields have been renamed to make them clearer.
+pub const struct_tm = extern struct {
+    /// Renamed from `tm_sec`.
+    /// Seconds after the minute - [0, 61] (until C99), [0, 60] (since C99)
+    second: c_int = 0,
+    /// Renamed from `tm_min`.
+    /// Minutes after the hour - [0, 59]
+    minute: c_int = 0,
+    /// Renamed from `tm_hour`.
+    /// Hours since midnight - [0, 23]
+    hour: c_int = 0,
+    /// Renamed from `tm_mday`.
+    /// Day of the month - [1, 31]
+    month_day: c_int = 0,
+    /// Renamed from `tm_mon`.
+    /// Months since January - [0, 11]
+    month: c_int = 0,
+    /// Renamed from `tm_year`.
+    /// Years since 1900
+    year: c_int = 0,
+    /// Renamed from `tm_wday`.
+    /// Days since Sunday - [0, 6]
+    week_day: c_int = 0,
+    /// Renamed from `tm_yday`.
+    /// Days since January 1 - [0, 365]
+    year_day: c_int = 0,
+    /// Renamed from `tm_isdst`.
+    /// Daylight Savings Time flag. The value is positive if DST is in effect, zero if not
+    /// and negative if no information is available.
+    is_dst: c_int = -1,
+
+    /// Sets the field `year` relative to 0 A.D.
+    /// @param year The year relative to 0 A.D.
+    pub fn with_year_AD(tm: struct_tm, year: c_int) tm {
+        tm.year = year - 1900;
+    }
+};
 
 /// DateTimePicker is a control that allows the user to select a date and/or time.
+///
+/// All functions operate on `struct tm` as defined in `<time.h>`.
+///
+/// All functions assume local time and do NOT perform any time zone conversions.
+///
+/// @warning The `struct_tm` members `week_day` and `year_day` are undefined.
+/// @warning The `struct_tm` member `is_dst` is ignored on windows and should be set to `-1`.
+///
+/// @todo for Time: define what values are returned when a part is missing
 pub const DateTimePicker = opaque {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
@@ -764,7 +809,12 @@ pub const DateTimePicker = opaque {
     pub extern fn uiNewDatePicker() ?*DateTimePicker;
     pub extern fn uiNewTimePicker() ?*DateTimePicker;
 
-    pub const Time = uiDateTimePickerTime;
+    // pub const Time = uiDateTimePickerTime;
+    pub fn Time(d: *DateTimePicker) struct_tm {
+        var time: struct_tm = undefined;
+        d.uiDateTimePickerTime(&time);
+        return time;
+    }
     pub const SetTime = uiDateTimePickerSetTime;
     pub const OnChanged = uiDateTimePickerOnChanged;
     pub const Type = enum {
@@ -1122,40 +1172,40 @@ pub const Area = opaque {
             pub extern fn uiDrawMatrixTransformSize(m: *Area.Draw.Matrix, x: *f64, y: *f64) void;
         };
     };
+};
 
-    pub const TextLayout = opaque {
-        pub const Params = extern struct {
-            String: ?*AttributedString,
-            DefaultFont: *FontDescriptor,
-            Width: f64,
-            Align: Align,
+pub const DrawTextLayout = opaque {
+    pub const Params = extern struct {
+        String: ?*AttributedString,
+        DefaultFont: *const FontDescriptor,
+        Width: f64,
+        Align: Align,
 
-            pub const Align = enum(c_int) {
-                Left = 0,
-                Center = 1,
-                Right = 2,
-            };
+        pub const Align = enum(c_int) {
+            Left = 0,
+            Center = 1,
+            Right = 2,
         };
-
-        pub extern fn uiDrawNewTextLayout(params: *Area.Draw.TextLayout.Params) ?*Area.Draw.TextLayout;
-        pub extern fn uiDrawFreeTextLayout(tl: *Area.Draw.TextLayout) void;
-        pub extern fn uiDrawTextLayoutExtents(tl: *Area.Draw.TextLayout, width: *f64, height: *f64) void;
-
-        pub const Free = uiDrawFreeTextLayout;
-        pub const Size = struct {
-            x: f64,
-            y: f64,
-        };
-        pub fn TextLayoutExtents(tl: *TextLayout) Size {
-            var size: Size = .{ .x = 0, .y = 0 };
-            uiDrawTextLayoutExtents(tl, &size.width, &size.height);
-            return size;
-        }
-
-        pub fn New(params: *TextLayout.Params) !*TextLayout {
-            return uiDrawNewTextLayout(params) orelse error.InitTextLayout;
-        }
     };
+
+    pub extern fn uiDrawNewTextLayout(params: *const DrawTextLayout.Params) ?*DrawTextLayout;
+    pub extern fn uiDrawFreeTextLayout(tl: *const DrawTextLayout) void;
+    pub extern fn uiDrawTextLayoutExtents(tl: *const DrawTextLayout, width: *f64, height: *f64) void;
+
+    pub const Free = uiDrawFreeTextLayout;
+    pub const Size = struct {
+        x: f64,
+        y: f64,
+    };
+    pub fn TextLayoutExtents(tl: *const DrawTextLayout) Size {
+        var size: Size = .{ .x = 0, .y = 0 };
+        uiDrawTextLayoutExtents(tl, &size.width, &size.height);
+        return size;
+    }
+
+    pub fn New(params: *DrawTextLayout.Params) !*DrawTextLayout {
+        return uiDrawNewTextLayout(params) orelse error.InitTextLayout;
+    }
 };
 
 pub const Attribute = opaque {
@@ -1236,10 +1286,10 @@ pub const Attribute = opaque {
     pub extern fn uiNewColorAttribute(r: f64, g: f64, b: f64, a: f64) ?*Attribute;
     pub extern fn uiAttributeColor(a: *const Attribute, r: *f64, g: *f64, b: *f64, alpha: *f64) void;
     pub extern fn uiNewBackgroundAttribute(r: f64, g: f64, b: f64, a: f64) ?*Attribute;
-    pub extern fn uiNewUnderlineAttribute(u: Attribute.Underline) ?*Attribute;
-    pub extern fn uiAttributeUnderline(a: *const Attribute) Attribute.Underline;
-    pub extern fn uiNewUnderlineColorAttribute(u: Attribute.UnderlineColor, r: f64, g: f64, b: f64, a: f64) ?*Attribute;
-    pub extern fn uiAttributeUnderlineColor(a: *const Attribute, u: *Attribute.UnderlineColor, r: *f64, g: *f64, b: *f64, alpha: *f64) void;
+    pub extern fn uiNewUnderlineAttribute(u: Attribute.UnderlineType) ?*Attribute;
+    pub extern fn uiAttributeUnderline(a: *const Attribute) Attribute.UnderlineType;
+    pub extern fn uiNewUnderlineColorAttribute(u: Attribute.UnderlineColorType, r: f64, g: f64, b: f64, a: f64) ?*Attribute;
+    pub extern fn uiAttributeUnderlineColor(a: *const Attribute, u: *Attribute.UnderlineColorType, r: *f64, g: *f64, b: *f64, alpha: *f64) void;
     pub extern fn uiAttributeFeatures(a: *const Attribute) ?*const OpenTypeFeatures;
 
     pub const Free = uiFreeAttribute;
@@ -1252,11 +1302,11 @@ pub const Attribute = opaque {
         Stretch: TextStretch,
         Color: struct { r: f64, g: f64, b: f64, a: f64 },
         Background: struct { r: f64, g: f64, b: f64, a: f64 },
-        UnderlineType: UnderlineType,
-        UnderlineColorType: struct { t: UnderlineColor, r: f64, g: f64, b: f64, a: f64 },
+        Underline: UnderlineType,
+        UnderlineColor: struct { t: UnderlineColorType, r: f64, g: f64, b: f64, a: f64 },
         Features,
     };
-    pub fn New(t: Type) !*Attribute {
+    pub fn New(t: TypeOptions) !*Attribute {
         return switch (t) {
             .Family => |family| uiNewFamilyAttribute(family),
             .Size => |size| uiNewSizeAttribute(size),
@@ -1265,8 +1315,8 @@ pub const Attribute = opaque {
             .Stretch => |stretch| uiNewStretchAttribute(stretch),
             .Color => |color| uiNewColorAttribute(color.r, color.g, color.b, color.a),
             .Background => |background| uiNewBackgroundAttribute(background.r, background.g, background.b, background.a),
-            .UnderlineType => |underline| uiNewUnderlineAttribute(underline),
-            .UnderlineColorType => |underline_color| uiNewUnderlineColorAttribute(underline_color.t, underline_color.r, underline_color.g, underline_color.b, underline_color.a),
+            .Underline => |underline| uiNewUnderlineAttribute(underline),
+            .UnderlineColor => |underline_color| uiNewUnderlineColorAttribute(underline_color.t, underline_color.r, underline_color.g, underline_color.b, underline_color.a),
             .Features => return error.InitFeaturesAttribute, // This attribute type cannot be constructed
         } orelse error.InitAttribute;
     }
@@ -1310,8 +1360,8 @@ pub const OpenTypeFeatures = opaque {
 /// AttributedString is a control that allows for complex text rendering.
 pub const AttributedString = opaque {
     pub const ForEachAttributeFunc = *const fn (*const AttributedString, *const Attribute, usize, usize, ?*anyopaque) callconv(.C) ui.ForEach;
-    pub fn New() !*AttributedString {
-        return uiNewAttributedString() orelse error.InitAttributedString;
+    pub fn New(initialString: [*:0]const u8) !*AttributedString {
+        return uiNewAttributedString(initialString) orelse error.InitAttributedString;
     }
 
     pub extern fn uiNewAttributedString(initialString: [*:0]const u8) ?*AttributedString;
@@ -1340,7 +1390,7 @@ pub const AttributedString = opaque {
 };
 
 pub const FontDescriptor = extern struct {
-    Family: *u8,
+    Family: [*:0]const u8,
     Size: f64,
     Weight: Attribute.TextWeight,
     Italic: Attribute.TextItalic,
