@@ -1392,7 +1392,7 @@ pub const Grid = opaque {
     pub const Align = enum(c_int) {
         Fill = 0,
         Start = 1,
-        Cetner = 2,
+        Center = 2,
         End = 3,
     };
 
