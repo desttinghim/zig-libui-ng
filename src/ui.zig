@@ -349,7 +349,7 @@ pub const Button = opaque {
     }
 
     pub fn New(text: [*:0]const u8) !*Button {
-        var new_button = uiNewButton(text);
+        const new_button = uiNewButton(text);
         if (new_button == null) return error.InitButton;
         return new_button.?;
     }
@@ -452,7 +452,7 @@ pub const Entry = opaque {
     pub extern fn uiNewSearchEntry() ?*Entry;
 
     pub const Text = uiEntryText;
-    pub const SetText = uiEntryText;
+    pub const SetText = uiEntrySetText;
     pub const OnChanged = uiEntryOnChanged;
 
     pub fn ReadOnly(e: *Entry) bool {
