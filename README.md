@@ -40,7 +40,7 @@ pub fn main() !void {
 ```
 
 ## Planned Features
-- [ ] Comptime function for defining a `Table` based on a struct
+- [x] Comptime function for defining a `Table` based on a struct
 - [ ] Nicer bindings for event callbacks
 - [ ] More examples
 - [ ] Project Template
