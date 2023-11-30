@@ -1171,41 +1171,41 @@ pub const Area = opaque {
             pub extern fn uiDrawMatrixTransformPoint(m: *Area.Draw.Matrix, x: *f64, y: *f64) void;
             pub extern fn uiDrawMatrixTransformSize(m: *Area.Draw.Matrix, x: *f64, y: *f64) void;
         };
-    };
-};
 
-pub const DrawTextLayout = opaque {
-    pub const Params = extern struct {
-        String: ?*AttributedString,
-        DefaultFont: *const FontDescriptor,
-        Width: f64,
-        Align: Align,
+        pub const TextLayout = opaque {
+            pub const Params = extern struct {
+                String: ?*AttributedString,
+                DefaultFont: *const FontDescriptor,
+                Width: f64,
+                Align: Align,
 
-        pub const Align = enum(c_int) {
-            Left = 0,
-            Center = 1,
-            Right = 2,
+                pub const Align = enum(c_int) {
+                    Left = 0,
+                    Center = 1,
+                    Right = 2,
+                };
+            };
+
+            pub extern fn uiDrawNewTextLayout(params: *const TextLayout.Params) ?*TextLayout;
+            pub extern fn uiDrawFreeTextLayout(tl: *const TextLayout) void;
+            pub extern fn uiDrawTextLayoutExtents(tl: *const TextLayout, width: *f64, height: *f64) void;
+
+            pub const Free = uiDrawFreeTextLayout;
+            pub const Size = struct {
+                x: f64,
+                y: f64,
+            };
+            pub fn TextLayoutExtents(tl: *const TextLayout) Size {
+                var size: Size = .{ .x = 0, .y = 0 };
+                uiDrawTextLayoutExtents(tl, &size.width, &size.height);
+                return size;
+            }
+
+            pub fn New(params: *TextLayout.Params) !*TextLayout {
+                return uiDrawNewTextLayout(params) orelse error.InitTextLayout;
+            }
         };
     };
-
-    pub extern fn uiDrawNewTextLayout(params: *const DrawTextLayout.Params) ?*DrawTextLayout;
-    pub extern fn uiDrawFreeTextLayout(tl: *const DrawTextLayout) void;
-    pub extern fn uiDrawTextLayoutExtents(tl: *const DrawTextLayout, width: *f64, height: *f64) void;
-
-    pub const Free = uiDrawFreeTextLayout;
-    pub const Size = struct {
-        x: f64,
-        y: f64,
-    };
-    pub fn TextLayoutExtents(tl: *const DrawTextLayout) Size {
-        var size: Size = .{ .x = 0, .y = 0 };
-        uiDrawTextLayoutExtents(tl, &size.width, &size.height);
-        return size;
-    }
-
-    pub fn New(params: *DrawTextLayout.Params) !*DrawTextLayout {
-        return uiDrawNewTextLayout(params) orelse error.InitTextLayout;
-    }
 };
 
 pub const Attribute = opaque {
