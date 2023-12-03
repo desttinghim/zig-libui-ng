@@ -35,6 +35,11 @@ pub fn build(b: *std.Build) !void {
         exe.linkLibrary(libui.artifact("ui"));
         exe.subsystem = std.Target.SubSystem.Windows;
 
+        exe.addWin32ResourceFile(.{
+            .file = .{ .path = "examples/resources.rc" },
+            .flags = &.{ "/d", "_UI_STATIC" },
+        });
+
         b.installArtifact(exe);
 
         const run_cmd = b.addRunArtifact(exe);
@@ -54,6 +59,11 @@ pub fn build(b: *std.Build) !void {
         exe.addModule("ui", ui_module);
         exe.linkLibrary(libui.artifact("ui"));
         exe.subsystem = std.Target.SubSystem.Windows;
+
+        exe.addWin32ResourceFile(.{
+            .file = .{ .path = "examples/resources.rc" },
+            .flags = &.{ "/d", "_UI_STATIC" },
+        });
 
         b.installArtifact(exe);
 
@@ -76,6 +86,11 @@ pub fn build(b: *std.Build) !void {
         exe.linkLibrary(libui.artifact("ui"));
         exe.subsystem = std.Target.SubSystem.Windows;
 
+        exe.addWin32ResourceFile(.{
+            .file = .{ .path = "examples/resources.rc" },
+            .flags = &.{ "/d", "_UI_STATIC" },
+        });
+
         b.installArtifact(exe);
 
         const run_cmd = b.addRunArtifact(exe);
@@ -95,6 +110,11 @@ pub fn build(b: *std.Build) !void {
         exe.addModule("ui", ui_module);
         exe.linkLibrary(libui.artifact("ui"));
         exe.subsystem = std.Target.SubSystem.Windows;
+
+        exe.addWin32ResourceFile(.{
+            .file = .{ .path = "examples/resources.rc" },
+            .flags = &.{ "/d", "_UI_STATIC" },
+        });
 
         b.installArtifact(exe);
 
@@ -116,6 +136,11 @@ pub fn build(b: *std.Build) !void {
         exe.linkLibrary(libui.artifact("ui"));
         exe.subsystem = std.Target.SubSystem.Windows;
 
+        exe.addWin32ResourceFile(.{
+            .file = .{ .path = "examples/resources.rc" },
+            .flags = &.{ "/d", "_UI_STATIC" },
+        });
+
         b.installArtifact(exe);
 
         const run_cmd = b.addRunArtifact(exe);
@@ -135,6 +160,11 @@ pub fn build(b: *std.Build) !void {
         exe.addModule("ui", ui_module);
         exe.linkLibrary(libui.artifact("ui"));
         exe.subsystem = std.Target.SubSystem.Windows;
+
+        exe.addWin32ResourceFile(.{
+            .file = .{ .path = "examples/resources.rc" },
+            .flags = &.{ "/d", "_UI_STATIC" },
+        });
 
         b.installArtifact(exe);
 
@@ -156,6 +186,11 @@ pub fn build(b: *std.Build) !void {
         exe.addModule("ui-extras", ui_extras_module);
         exe.linkLibrary(libui.artifact("ui"));
         exe.subsystem = std.Target.SubSystem.Windows;
+
+        exe.addWin32ResourceFile(.{
+            .file = .{ .path = "examples/resources.rc" },
+            .flags = &.{ "/d", "_UI_STATIC" },
+        });
 
         b.installArtifact(exe);
 
