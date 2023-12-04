@@ -121,7 +121,7 @@ pub fn Table(comptime T: type) type {
                 .Model = self.model,
                 .RowBackgroundColorModelColumn = @intFromEnum(params.row_background),
             };
-            var table = try ui.Table.New(&ui_params);
+            const table = try ui.Table.New(&ui_params);
             return table;
         }
 

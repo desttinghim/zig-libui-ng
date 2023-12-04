@@ -796,11 +796,13 @@ pub const struct_tm = extern struct {
 /// @warning The `struct_tm` member `is_dst` is ignored on windows and should be set to `-1`.
 ///
 /// @todo for Time: define what values are returned when a part is missing
-pub const DateTimePicker = opaque {
+pub const DateTimePicker = struct {
     const Self = @This();
     pub fn as_control(self: *Self) *Control {
         return @ptrCast(@alignCast(self));
     }
+
+    time: struct_tm = undefined,
 
     pub extern fn uiDateTimePickerTime(d: *DateTimePicker, time: *struct_tm) void;
     pub extern fn uiDateTimePickerSetTime(d: *DateTimePicker, time: *const struct_tm) void;
@@ -811,9 +813,8 @@ pub const DateTimePicker = opaque {
 
     // pub const Time = uiDateTimePickerTime;
     pub fn Time(d: *DateTimePicker) struct_tm {
-        var time: struct_tm = undefined;
-        d.uiDateTimePickerTime(&time);
-        return time;
+        d.uiDateTimePickerTime(&d.time);
+        return d.time;
     }
     pub const SetTime = uiDateTimePickerSetTime;
     pub const OnChanged = uiDateTimePickerOnChanged;
@@ -1443,7 +1444,7 @@ pub const ColorButton = opaque {
     pub extern fn uiNewColorButton() ?*ColorButton;
 
     pub fn Color(cb: *const ColorButton) ColorValue {
-        var color_value: ColorValue = undefined;
+        const color_value: ColorValue = undefined;
         uiColorButtonColor(
             cb,
             color_value.red,
