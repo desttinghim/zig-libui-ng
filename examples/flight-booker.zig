@@ -186,9 +186,8 @@ const App = struct {
             const leave_date = app.leave_date orelse break :enable_book;
             const return_date = app.return_date orelse break :enable_book;
 
-            if (leave_date.year <= return_date.year and
-                leave_date.month <= return_date.month and
-                leave_date.month_day < return_date.month_day)
+            if ((leave_date.year < return_date.year) or
+                (leave_date.year == return_date.year and leave_date.year_day <= return_date.year_day))
             {
                 app.return_status.SetText("");
                 app.book.as_control().Enable();
