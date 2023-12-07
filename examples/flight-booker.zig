@@ -17,7 +17,7 @@ pub fn main() !void {
     };
     defer ui.Uninit();
 
-    const main_window = try ui.Window.New("Hello, World!", 320, 240, .hide_menubar);
+    const main_window = try ui.Window.New("Fly with IguanaAir", 320, 240, .hide_menubar);
     const vbox = try ui.Box.New(.Vertical);
 
     var app = App{
@@ -183,12 +183,11 @@ const App = struct {
         }
 
         enable_book: {
-            const leave_date = app.leave_date orelse break :enable_book;
+            const leave_date = app.leave_date orelse app.leave_datetime.Time();
             const return_date = app.return_date orelse break :enable_book;
 
-            if (leave_date.year <= return_date.year and
-                leave_date.month <= return_date.month and
-                leave_date.month_day < return_date.month_day)
+            if ((leave_date.year < return_date.year) or
+                (leave_date.year == return_date.year and leave_date.year_day <= return_date.year_day))
             {
                 app.return_status.SetText("");
                 app.book.as_control().Enable();
