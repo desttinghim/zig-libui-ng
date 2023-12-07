@@ -747,7 +747,7 @@ pub const RadioButtons = opaque {
     }
 };
 
-/// Based on `struct tm` from libc `time.h`
+/// Based on `struct tm` from BSD standard `time.h`
 /// Fields have been renamed to make them clearer.
 pub const struct_tm = extern struct {
     /// Renamed from `tm_sec`.
@@ -778,12 +778,12 @@ pub const struct_tm = extern struct {
     /// Daylight Savings Time flag. The value is positive if DST is in effect, zero if not
     /// and negative if no information is available.
     is_dst: c_int = -1,
-
-    /// Sets the field `year` relative to 0 A.D.
-    /// @param year The year relative to 0 A.D.
-    pub fn with_year_AD(tm: struct_tm, year: c_int) tm {
-        tm.year = year - 1900;
-    }
+    /// Renamed from BSD standard `tm_gmtoff`
+    /// Seconds east of UTC
+    gmtoff: c_long = 0,
+    /// Renamed from BSD standard `tm_zone`
+    /// Timezone abbreviation, pointer to a C string
+    zone: [*c]const u8 = undefined,
 };
 
 /// DateTimePicker is a control that allows the user to select a date and/or time.
@@ -811,11 +811,10 @@ pub const DateTimePicker = opaque {
 
     // pub const Time = uiDateTimePickerTime;
     pub fn Time(d: *DateTimePicker) struct_tm {
-        const ui_allocator = std.heap.page_allocator;
-        const tm = ui_allocator.create(struct_tm) catch return struct_tm{};
-        defer ui_allocator.destroy(tm);
-        d.uiDateTimePickerTime(tm);
-        return tm.*;
+        var tm: struct_tm = undefined;
+        d.uiDateTimePickerTime(&tm);
+        std.debug.print("new time = {any} TZ {s}\n", .{ tm, tm.zone });
+        return tm;
     }
     pub const SetTime = uiDateTimePickerSetTime;
     pub const OnChanged = uiDateTimePickerOnChanged;
