@@ -1060,151 +1060,215 @@ pub const Area = opaque {
             } orelse error.InitArea;
         }
     };
+};
 
-    pub const Draw = opaque {
-        pub const Context = opaque {
-            pub extern fn uiDrawStroke(c: *Area.Draw.Context, path: *Area.Draw.Path, b: *Area.Draw.Path.Brush, p: *Area.Draw.Path.StrokeParams) void;
-            pub extern fn uiDrawFill(c: *Area.Draw.Context, path: *Area.Draw.Path, b: *Area.Draw.Path.Brush) void;
-            pub extern fn uiDrawText(c: *Area.Draw.Context, tl: *Area.Draw.TextLayout, x: f64, y: f64) void;
+pub const Draw = opaque {
+    pub const Context = opaque {
+        pub extern fn uiDrawStroke(c: *Draw.Context, path: *Draw.Path, b: *Draw.Brush, p: *Draw.StrokeParams) void;
+        pub extern fn uiDrawFill(c: *Draw.Context, path: *Draw.Path, b: *Draw.Brush) void;
+        pub extern fn uiDrawText(c: *Draw.Context, tl: *Draw.TextLayout, x: f64, y: f64) void;
 
-            pub const Stroke = uiDrawStroke;
-            pub const Fill = uiDrawStroke;
-            pub const Text = uiDrawStroke;
-        };
-        pub const Params = extern struct {
-            Context: ?*Context,
-            AreaWidth: f64,
-            AreaHeight: f64,
-            ClipX: f64,
-            ClipY: f64,
-            ClipWidth: f64,
-            ClipHeight: f64,
-        };
+        pub const Stroke = uiDrawStroke;
+        pub const Fill = uiDrawFill;
+        pub const Text = uiDrawText;
+    };
+    pub const Params = extern struct {
+        Context: ?*Context,
+        AreaWidth: f64,
+        AreaHeight: f64,
+        ClipX: f64,
+        ClipY: f64,
+        ClipWidth: f64,
+        ClipHeight: f64,
+    };
 
-        pub const Path = opaque {
-            pub const FillMode = enum(c_int) {
-                Winding = 0,
-                Alternate = 1,
-            };
-
-            pub extern fn uiDrawNewPath(fillMode: Area.Draw.Path.FillMode) ?*Area.Draw.Path;
-            pub extern fn uiDrawFreePath(p: *Area.Draw.Path) void;
-            pub extern fn uiDrawPathNewFigure(p: *Area.Draw.Path, x: f64, y: f64) void;
-            pub extern fn uiDrawPathNewFigureWithArc(p: *Area.Draw.Path, xCenter: f64, yCenter: f64, radius: f64, startAngle: f64, sweep: f64, negative: c_int) void;
-            pub extern fn uiDrawPathLineTo(p: *Area.Draw.Path, x: f64, y: f64) void;
-            pub extern fn uiDrawPathArcTo(p: *Area.Draw.Path, xCenter: f64, yCenter: f64, radius: f64, startAngle: f64, sweep: f64, negative: c_int) void;
-            pub extern fn uiDrawPathBezierTo(p: *Area.Draw.Path, c1x: f64, c1y: f64, c2x: f64, c2y: f64, endX: f64, endY: f64) void;
-            pub extern fn uiDrawPathCloseFigure(p: *Area.Draw.Path) void;
-            pub extern fn uiDrawPathAddRectangle(p: *Area.Draw.Path, x: f64, y: f64, width: f64, height: f64) void;
-            pub extern fn uiDrawPathEnded(p: *Area.Draw.Path) c_int;
-            pub extern fn uiDrawPathEnd(p: *Area.Draw.Path) void;
+    pub const Path = opaque {
+        pub const FillMode = enum(c_int) {
+            Winding = 0,
+            Alternate = 1,
         };
 
-        pub const Brush = extern struct {
-            Type: Type,
+        pub extern fn uiDrawNewPath(fillMode: Draw.Path.FillMode) ?*Draw.Path;
+        pub extern fn uiDrawFreePath(p: *Draw.Path) void;
+        pub extern fn uiDrawPathNewFigure(p: *Draw.Path, x: f64, y: f64) void;
+        pub extern fn uiDrawPathNewFigureWithArc(p: *Draw.Path, xCenter: f64, yCenter: f64, radius: f64, startAngle: f64, sweep: f64, negative: c_int) void;
+        pub extern fn uiDrawPathLineTo(p: *Draw.Path, x: f64, y: f64) void;
+        pub extern fn uiDrawPathArcTo(p: *Draw.Path, xCenter: f64, yCenter: f64, radius: f64, startAngle: f64, sweep: f64, negative: c_int) void;
+        pub extern fn uiDrawPathBezierTo(p: *Draw.Path, c1x: f64, c1y: f64, c2x: f64, c2y: f64, endX: f64, endY: f64) void;
+        pub extern fn uiDrawPathCloseFigure(p: *Draw.Path) void;
+        pub extern fn uiDrawPathAddRectangle(p: *Draw.Path, x: f64, y: f64, width: f64, height: f64) void;
+        pub extern fn uiDrawPathEnded(p: *Draw.Path) c_int;
+        pub extern fn uiDrawPathEnd(p: *Draw.Path) void;
+
+        pub const New = uiDrawNewPath;
+        pub const Free = uiDrawFreePath;
+        pub const NewFigure = uiDrawPathNewFigure;
+        pub const NewFigureWithArc = uiDrawPathNewFigureWithArc;
+        pub const LineTo = uiDrawPathLineTo;
+        pub const ArcTo = uiDrawPathArcTo;
+        pub const BezierTo = uiDrawPathBezierTo;
+        pub const CloseFigure = uiDrawPathCloseFigure;
+        pub const AddRectangle = uiDrawPathAddRectangle;
+        pub const Ended = uiDrawPathEnded;
+        pub const End = uiDrawPathEnd;
+    };
+
+    pub const Brush = extern struct {
+        Type: Type,
+        R: f64,
+        G: f64,
+        B: f64,
+        A: f64,
+        X0: f64,
+        Y0: f64,
+        X1: f64,
+        Y1: f64,
+        OuterRadius: f64,
+        Stops: ?[*]GradientStop,
+        NumStops: usize,
+
+        pub const Type = enum(c_int) {
+            Solid = 0,
+            LinearGradient = 1,
+            RadialGradient = 2,
+            Image = 3,
+        };
+
+        pub const GradientStop = extern struct {
+            Pos: f64,
             R: f64,
             G: f64,
             B: f64,
             A: f64,
-            X0: f64,
-            Y0: f64,
-            X1: f64,
-            Y1: f64,
-            OuterRadius: f64,
-            Stops: *GradientStop,
-            NumStops: usize,
-
-            pub const Type = enum(c_int) {
-                Solid = 0,
-                LinearGradient = 1,
-                RadialGradient = 2,
-                Image = 3,
-            };
-
-            pub const GradientStop = extern struct {
-                Pos: f64,
-                R: f64,
-                G: f64,
-                B: f64,
-                A: f64,
-            };
         };
 
-        pub const DefaultMiterLimit = @as(f64, 10.0);
-        pub const StrokeParams = extern struct {
-            Cap: LineCap,
-            Join: LineJoin,
-            Thickness: f64,
+        pub const InitOptions = struct {
+            Type: Type = .Solid,
+            R: f64 = 1,
+            G: f64 = 1,
+            B: f64 = 1,
+            A: f64 = 1,
+            X0: f64 = 0,
+            Y0: f64 = 0,
+            X1: f64 = 1,
+            Y1: f64 = 1,
+            OuterRadius: f64 = 1,
+            Stops: ?[]GradientStop = null,
+        };
+
+        pub fn init(options: Draw.Brush.InitOptions) @This() {
+            return @This(){
+                .Type = options.Type,
+                .R = options.R,
+                .G = options.G,
+                .B = options.B,
+                .A = options.A,
+                .X0 = options.X0,
+                .Y0 = options.Y0,
+                .X1 = options.X1,
+                .Y1 = options.Y1,
+                .OuterRadius = options.OuterRadius,
+                .Stops = if (options.Stops) |s| s.ptr else null,
+                .NumStops = if (options.Stops) |s| s.len else 0,
+            };
+        }
+    };
+
+    pub const DefaultMiterLimit = @as(f64, 10.0);
+    pub const StrokeParams = extern struct {
+        Cap: LineCap,
+        Join: LineJoin,
+        Thickness: f64,
+        MiterLimit: f64 = DefaultMiterLimit,
+        Dashes: ?[*]f64,
+        NumDashes: usize,
+        DashPhase: f64,
+
+        pub const LineCap = enum(c_int) {
+            Flat = 0,
+            Round = 1,
+            Square = 2,
+        };
+        pub const LineJoin = enum(c_int) {
+            Miter = 0,
+            Round = 1,
+            Bevel = 2,
+        };
+
+        pub const InitOptions = struct {
+            Cap: LineCap = .Flat,
+            Join: LineJoin = .Miter,
+            Thickness: f64 = 1,
             MiterLimit: f64 = DefaultMiterLimit,
-            Dashes: [*]f64,
-            NumDashes: usize,
-            DashPhase: f64,
+            Dashes: ?[]f64 = null,
+            DashPhase: f64 = 0,
+        };
 
-            pub const LineCap = enum(c_int) {
-                Flat = 0,
-                Round = 1,
-                Square = 2,
+        pub fn init(options: Draw.StrokeParams.InitOptions) @This() {
+            return @This(){
+                .Cap = options.Cap,
+                .Join = options.Join,
+                .Thickness = options.Thickness,
+                .MiterLimit = options.MiterLimit,
+                .Dashes = if (options.Dashes) |s| s.ptr else null,
+                .NumDashes = if (options.Dashes) |s| s.len else 0,
+                .DashPhase = options.DashPhase,
             };
-            pub const LineJoin = enum(c_int) {
-                Miter = 0,
-                Round = 1,
-                Bevel = 2,
+        }
+    };
+
+    pub const Matrix = extern struct {
+        M11: f64,
+        M12: f64,
+        M21: f64,
+        M22: f64,
+        M31: f64,
+        M32: f64,
+
+        pub extern fn uiDrawMatrixSetIdentity(m: *Area.Draw.Matrix) void;
+        pub extern fn uiDrawMatrixTranslate(m: *Area.Draw.Matrix, x: f64, y: f64) void;
+        pub extern fn uiDrawMatrixScale(m: *Area.Draw.Matrix, xCenter: f64, yCenter: f64, x: f64, y: f64) void;
+        pub extern fn uiDrawMatrixRotate(m: *Area.Draw.Matrix, x: f64, y: f64, amount: f64) void;
+        pub extern fn uiDrawMatrixSkew(m: *Area.Draw.Matrix, x: f64, y: f64, xamount: f64, yamount: f64) void;
+        pub extern fn uiDrawMatrixMultiply(dest: *Area.Draw.Matrix, src: *Area.Draw.Matrix) void;
+        pub extern fn uiDrawMatrixInvertible(m: *Area.Draw.Matrix) c_int;
+        pub extern fn uiDrawMatrixInvert(m: *Area.Draw.Matrix) c_int;
+        pub extern fn uiDrawMatrixTransformPoint(m: *Area.Draw.Matrix, x: *f64, y: *f64) void;
+        pub extern fn uiDrawMatrixTransformSize(m: *Area.Draw.Matrix, x: *f64, y: *f64) void;
+    };
+
+    pub const TextLayout = opaque {
+        pub const Params = extern struct {
+            String: ?*AttributedString,
+            DefaultFont: *FontDescriptor,
+            Width: f64,
+            Align: Align,
+
+            pub const Align = enum(c_int) {
+                Left = 0,
+                Center = 1,
+                Right = 2,
             };
         };
 
-        pub const Matrix = extern struct {
-            M11: f64,
-            M12: f64,
-            M21: f64,
-            M22: f64,
-            M31: f64,
-            M32: f64,
+        pub extern fn uiDrawNewTextLayout(params: *Draw.TextLayout.Params) ?*Draw.TextLayout;
+        pub extern fn uiDrawFreeTextLayout(tl: *Draw.TextLayout) void;
+        pub extern fn uiDrawTextLayoutExtents(tl: *Draw.TextLayout, width: *f64, height: *f64) void;
 
-            pub extern fn uiDrawMatrixSetIdentity(m: *Area.Draw.Matrix) void;
-            pub extern fn uiDrawMatrixTranslate(m: *Area.Draw.Matrix, x: f64, y: f64) void;
-            pub extern fn uiDrawMatrixScale(m: *Area.Draw.Matrix, xCenter: f64, yCenter: f64, x: f64, y: f64) void;
-            pub extern fn uiDrawMatrixRotate(m: *Area.Draw.Matrix, x: f64, y: f64, amount: f64) void;
-            pub extern fn uiDrawMatrixSkew(m: *Area.Draw.Matrix, x: f64, y: f64, xamount: f64, yamount: f64) void;
-            pub extern fn uiDrawMatrixMultiply(dest: *Area.Draw.Matrix, src: *Area.Draw.Matrix) void;
-            pub extern fn uiDrawMatrixInvertible(m: *Area.Draw.Matrix) c_int;
-            pub extern fn uiDrawMatrixInvert(m: *Area.Draw.Matrix) c_int;
-            pub extern fn uiDrawMatrixTransformPoint(m: *Area.Draw.Matrix, x: *f64, y: *f64) void;
-            pub extern fn uiDrawMatrixTransformSize(m: *Area.Draw.Matrix, x: *f64, y: *f64) void;
+        pub const Free = uiDrawFreeTextLayout;
+        pub const Size = struct {
+            x: f64,
+            y: f64,
         };
+        pub fn TextLayoutExtents(tl: *TextLayout) Size {
+            var size: Size = .{ .x = 0, .y = 0 };
+            uiDrawTextLayoutExtents(tl, &size.x, &size.y);
+            return size;
+        }
 
-        pub const TextLayout = opaque {
-            pub const Params = extern struct {
-                String: ?*AttributedString,
-                DefaultFont: *const FontDescriptor,
-                Width: f64,
-                Align: Align,
-
-                pub const Align = enum(c_int) {
-                    Left = 0,
-                    Center = 1,
-                    Right = 2,
-                };
-            };
-
-            pub extern fn uiDrawNewTextLayout(params: *const TextLayout.Params) ?*TextLayout;
-            pub extern fn uiDrawFreeTextLayout(tl: *const TextLayout) void;
-            pub extern fn uiDrawTextLayoutExtents(tl: *const TextLayout, width: *f64, height: *f64) void;
-
-            pub const Free = uiDrawFreeTextLayout;
-            pub const Size = struct {
-                x: f64,
-                y: f64,
-            };
-            pub fn TextLayoutExtents(tl: *const TextLayout) Size {
-                var size: Size = .{ .x = 0, .y = 0 };
-                uiDrawTextLayoutExtents(tl, &size.width, &size.height);
-                return size;
-            }
-
-            pub fn New(params: *TextLayout.Params) !*TextLayout {
-                return uiDrawNewTextLayout(params) orelse error.InitTextLayout;
-            }
-        };
+        pub fn New(params: *TextLayout.Params) !*TextLayout {
+            return uiDrawNewTextLayout(params) orelse error.InitTextLayout;
+        }
     };
 };
 

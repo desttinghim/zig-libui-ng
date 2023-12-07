@@ -24,6 +24,8 @@ pub fn build(b: *std.Build) !void {
         }},
     });
 
+    const check_step = b.step("check", "Build all examples");
+
     {
         const exe = b.addExecutable(.{
             .name = "hello",
@@ -47,6 +49,8 @@ pub fn build(b: *std.Build) !void {
 
         const run_step = b.step("run-example-hello", "Run the hello example app");
         run_step.dependOn(&run_cmd.step);
+
+        check_step.dependOn(&exe.step);
     }
 
     {
@@ -72,6 +76,8 @@ pub fn build(b: *std.Build) !void {
 
         const run_step = b.step("run-example-timer", "Run the timer example app");
         run_step.dependOn(&run_cmd.step);
+
+        check_step.dependOn(&exe.step);
     }
 
     {
@@ -98,6 +104,8 @@ pub fn build(b: *std.Build) !void {
 
         const run_step = b.step("run-example-table", "Run the table example app");
         run_step.dependOn(&run_cmd.step);
+
+        check_step.dependOn(&exe.step);
     }
 
     {
@@ -123,6 +131,8 @@ pub fn build(b: *std.Build) !void {
 
         const run_step = b.step("run-example-counter", "Run the counter example app");
         run_step.dependOn(&run_cmd.step);
+
+        check_step.dependOn(&exe.step);
     }
 
     {
@@ -148,6 +158,8 @@ pub fn build(b: *std.Build) !void {
 
         const run_step = b.step("run-example-temperature-converter", "Run the temperature converter example app");
         run_step.dependOn(&run_cmd.step);
+
+        check_step.dependOn(&exe.step);
     }
 
     {
@@ -173,6 +185,8 @@ pub fn build(b: *std.Build) !void {
 
         const run_step = b.step("run-example-flight-booker", "Run the flight booker  example app");
         run_step.dependOn(&run_cmd.step);
+
+        check_step.dependOn(&exe.step);
     }
 
     {
@@ -199,5 +213,29 @@ pub fn build(b: *std.Build) !void {
 
         const run_step = b.step("run-example-crud", "Run the CRUD example app");
         run_step.dependOn(&run_cmd.step);
+
+        check_step.dependOn(&exe.step);
+    }
+
+    {
+        const exe = b.addExecutable(.{
+            .name = "draw",
+            .root_source_file = .{ .path = "examples/draw.zig" },
+            .target = target,
+            .optimize = optimize,
+        });
+        exe.addModule("ui", ui_module);
+        exe.linkLibrary(libui.artifact("ui"));
+        exe.subsystem = std.Target.SubSystem.Windows;
+
+        b.installArtifact(exe);
+
+        const run_cmd = b.addRunArtifact(exe);
+        run_cmd.step.dependOn(&exe.step);
+
+        const run_step = b.step("run-example-draw", "Run the draw example app");
+        run_step.dependOn(&run_cmd.step);
+
+        check_step.dependOn(&exe.step);
     }
 }
