@@ -813,7 +813,6 @@ pub const DateTimePicker = opaque {
     pub fn Time(d: *DateTimePicker) struct_tm {
         var tm: struct_tm = undefined;
         d.uiDateTimePickerTime(&tm);
-        std.debug.print("new time = {any} TZ {s}\n", .{ tm, tm.zone });
         return tm;
     }
     pub const SetTime = uiDateTimePickerSetTime;
