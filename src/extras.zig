@@ -267,16 +267,16 @@ pub fn Table(comptime T: type) type {
                         TableType.Image => {
                             @compileError("TableType.Image is unimplemented");
                         },
-                        [:0]const u8 => {
+                        [:0]const u8, []const u8 => {
                             const string = @field(data, field.name);
-                            value_param = .{ .String = string };
+                            value_param = .{ .String = @ptrCast(string) };
                         },
                         else => |t| {
                             var buffer: [1048]u8 = undefined;
                             const value = @field(data, field.name);
                             // TODO: allow user to configure float precision
                             // TODO: allow user to configure int base
-                            const format_string = if (@typeInfo(t) == .Float) "{d:.2}" else "{}";
+                            const format_string = if (@typeInfo(t) == .Float) "{d:.2}" else "{any}";
                             const string = std.fmt.bufPrintZ(&buffer, format_string, .{value}) catch @panic("Formatting column " ++ field.name);
                             value_param = .{ .String = string };
                         },
