@@ -215,8 +215,7 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
         });
-        exe.addModule("ui", ui_module);
-        exe.linkLibrary(libui.artifact("ui"));
+        exe.root_module.addImport("ui", ui_module);
         exe.subsystem = std.Target.SubSystem.Windows;
 
         b.installArtifact(exe);

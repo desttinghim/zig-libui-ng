@@ -40,19 +40,17 @@ pub fn main() !void {
     // Create objects
     const main_window = try ui.Window.New("Counter", 320, 50, .hide_menubar);
     const hbox = try ui.Box.New(.Horizontal);
-    celsius_spinbox = try ui.Spinbox.New(.{ .Double = .{
+    celsius_spinbox = try ui.Spinbox.New(.{ .Integer = .{
         .min = -10_000,
         .max = 1_000_000,
-        .precision = 2,
     } });
-    fahrenheit_spinbox = try ui.Spinbox.New(.{ .Double = .{
+    fahrenheit_spinbox = try ui.Spinbox.New(.{ .Integer = .{
         .min = -10_000,
         .max = 1_000_000,
-        .precision = 2,
     } });
 
-    celsius_spinbox.SetValueDouble(current_temperature.as_celsius());
-    fahrenheit_spinbox.SetValueDouble(current_temperature.as_fahrenheit());
+    celsius_spinbox.SetValue(@intFromFloat(current_temperature.as_celsius()));
+    fahrenheit_spinbox.SetValue(@intFromFloat(current_temperature.as_fahrenheit()));
 
     // Padding
     main_window.SetResizeable(false);
@@ -86,10 +84,10 @@ pub fn on_closing(_: *ui.Window, _: ?*void) ui.Window.ClosingAction {
 pub fn on_changed(spinbox: ?*ui.Spinbox, data: ?*anyopaque) callconv(.C) void {
     const current_temperature: *Temperature = @ptrCast(@alignCast(data));
     if (spinbox == celsius_spinbox) {
-        current_temperature.* = .{ .celsius = celsius_spinbox.ValueDouble() };
-        fahrenheit_spinbox.SetValueDouble(current_temperature.as_fahrenheit());
+        current_temperature.* = .{ .celsius = @floatFromInt(celsius_spinbox.Value()) };
+        fahrenheit_spinbox.SetValue(@intFromFloat(current_temperature.as_fahrenheit()));
     } else if (spinbox == fahrenheit_spinbox) {
-        current_temperature.* = .{ .fahrenheit = fahrenheit_spinbox.ValueDouble() };
-        celsius_spinbox.SetValueDouble(current_temperature.as_celsius());
+        current_temperature.* = .{ .fahrenheit = @floatFromInt(fahrenheit_spinbox.Value()) };
+        celsius_spinbox.SetValue(@intFromFloat(current_temperature.as_celsius()));
     }
 }
