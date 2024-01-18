@@ -18,7 +18,7 @@
           devShells = {
             default = pkgs.mkShell {
               buildInputs = [
-                zig.master-2023-10-16
+                zig.master-2024-01-07
                 pkgs.pkg-config
                 pkgs.gtk3
                 pkgs.gdb
