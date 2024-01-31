@@ -4,15 +4,16 @@ const std = @import("std");
 const ui = @import("ui");
 const extras = @import("ui-extras");
 
-pub fn on_closing(_: *ui.Window, _: ?*void) ui.Window.ClosingAction {
+pub fn on_closing(_: *ui.Window, _: ?*void) !ui.Window.ClosingAction {
     ui.Quit();
     return .should_close;
 }
 
-pub fn on_click(_: *ui.Button, table: ?*extras.Table(Edit)) void {
-    const name = table.?.allocator.?.dupeZ(u8, "Step") catch @panic("");
-    const button_text = table.?.allocator.?.dupeZ(u8, "View") catch @panic("");
-    table.?.data.array_list.append(.{ .name = name, .button_text = button_text }) catch @panic("");
+const OnClickError = std.mem.Allocator.Error || ui.Error;
+pub fn on_click(_: *ui.Button, table: ?*extras.Table(Edit)) !void {
+    const name = try table.?.allocator.?.dupeZ(u8, "Step");
+    const button_text = try table.?.allocator.?.dupeZ(u8, "View");
+    try table.?.data.array_list.append(.{ .name = name, .button_text = button_text });
     table.?.model.RowInserted(@intCast(table.?.data.array_list.items.len - 1));
 }
 
@@ -36,7 +37,7 @@ pub fn main() !void {
     const main_window = try ui.Window.New("Hello, World!", 320, 240, .hide_menubar);
 
     main_window.as_control().Show();
-    main_window.OnClosing(void, on_closing, null);
+    main_window.OnClosing(void, ui.Error, on_closing, null);
 
     const vbox = try ui.Box.New(.Vertical);
     main_window.SetChild(vbox.as_control());
@@ -94,7 +95,7 @@ pub fn main() !void {
     vbox.Append(custom_table_view.as_control(), .stretch);
 
     const button = try ui.Button.New("Add Row");
-    button.OnClicked(extras.Table(Edit), on_click, &table);
+    button.OnClicked(extras.Table(Edit), OnClickError, on_click, &table);
     vbox.Append(button.as_control(), .dont_stretch);
 
     ui.Main();
