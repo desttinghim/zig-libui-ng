@@ -103,7 +103,7 @@ pub fn OnShouldQuit(comptime T: type, comptime E: type, comptime callback: *cons
         fn cb(t_opt: ?*anyopaque) callconv(.C) QuitAction {
             return @call(.auto, callback, .{@as(?*T, @ptrCast(@alignCast(t_opt)))}) catch |err| {
                 error_handler(.OnShouldQuit, t_opt, err);
-                return 1;
+                return .should_quit;
             };
         }
     }.cb;
@@ -346,6 +346,13 @@ pub const Window = opaque {
         return new_window.?;
     }
 
+    /// @param window   - Pointer to ui Window
+    /// @param T        - The type of the userdata parameter
+    /// @param E        - The error return type of the callback function, often `ui.Error`
+    /// @param f        - Callback function for event
+    /// @param userdata - Pointer to value of type T, to be passed to the callback
+    ///
+    /// Call this function to have `f` called when the Window's position has changed.
     pub fn OnPositionChanged(window: *Window, comptime T: type, comptime E: type, comptime f: *const fn (*Window, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
             fn callback(window_opt: ?*Window, t_opt: ?*anyopaque) callconv(.C) void {
@@ -357,6 +364,13 @@ pub const Window = opaque {
         uiWindowOnPositionChanged(window, callback, userdata);
     }
 
+    /// @param window   - Pointer to ui Window
+    /// @param T        - The type of the userdata parameter
+    /// @param E        - The error return type of the callback function, often `ui.Error`
+    /// @param f        - Callback function for event
+    /// @param userdata - Pointer to value of type T, to be passed to the callback
+    ///
+    /// Call this function to have `f` called when the Window has been resized.
     pub fn OnContentSizeChanged(window: *Window, comptime T: type, comptime E: type, comptime f: *const fn (*Window, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
             fn callback(window_opt: ?*Window, t_opt: ?*anyopaque) callconv(.C) void {
@@ -372,6 +386,17 @@ pub const Window = opaque {
         should_not_close = 0,
         should_close = 1,
     };
+    /// @param window   - Pointer to ui Window
+    /// @param T        - The type of the userdata parameter
+    /// @param E        - The error return type of the callback function, often `ui.Error`
+    /// @param f        - Callback function for event
+    /// @param userdata - Pointer to value of type T, to be passed to the callback
+    ///
+    /// Call this function to have `f` called when the user attempts to close the window.
+    /// For most single window programs, this will correspond to quiting the application
+    /// and the handler should call `ui.Quit()` then return `.should_close`. If you need to
+    /// run cleanup code on a window level construct (for example, a document), this is a
+    /// good place to handle it.
     pub fn OnClosing(window: *Window, comptime T: type, comptime E: type, comptime f: *const fn (*Window, ?*T) E!ClosingAction, userdata: ?*T) void {
         const callback = struct {
             fn callback(window_opt: ?*Window, t_opt: ?*anyopaque) callconv(.C) ClosingAction {
@@ -1060,12 +1085,13 @@ pub const MenuItem = opaque {
     pub const Enable = uiMenuItemEnable;
     pub const Disable = uiMenuItemDisable;
     pub const Self = @This();
-    pub fn OnClicked(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
+    pub fn OnClicked(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, *Window, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, window_opt: ?*Window, t_opt: ?*anyopaque) callconv(.C) void {
                 const err_ctx = ErrorContext{ .MenuItemOnClicked = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
-                f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
+                const w = window_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
+                f(s, w, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
             }
         }.callback;
         uiMenuItemOnClicked(self, callback, userdata);

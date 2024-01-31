@@ -19,10 +19,10 @@ pub fn main() !void {
 
     const main_window = try ui.Window.New("Hello, World!", 320, 240, .hide_menubar);
 
+    main_window.SetChild((try ui.Label.New("Hello, World!")).as_control());
+
     main_window.as_control().Show();
     main_window.OnClosing(void, ui.Error, on_closing, null);
-
-    main_window.MsgBox("Message Box", "Hello, World!");
 
     ui.Main();
 }
