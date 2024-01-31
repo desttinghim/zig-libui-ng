@@ -1,7 +1,7 @@
 const std = @import("std");
 const ui = @import("ui");
 
-pub fn on_closing(_: *ui.Window, _: ?*void) ui.Window.ClosingAction {
+pub fn on_closing(_: *ui.Window, _: ?*void) !ui.Window.ClosingAction {
     ui.Quit();
     return .should_close;
 }
@@ -45,11 +45,11 @@ pub fn main() !void {
     app.flight_type.Append("return flight");
 
     // Connect signals
-    main_window.OnClosing(void, on_closing, null);
-    app.flight_type.OnSelected(on_flight_type_selected, &app);
-    app.leave_datetime.OnChanged(on_leave_changed, &app);
-    app.return_datetime.OnChanged(on_return_changed, &app);
-    app.book.OnClicked(App, on_booked, &app);
+    main_window.OnClosing(void, ui.Error, on_closing, null);
+    app.flight_type.OnSelected(App, ui.Error, on_flight_type_selected, &app);
+    app.leave_datetime.OnChanged(App, ui.Error, on_leave_changed, &app);
+    app.return_datetime.OnChanged(App, ui.Error, on_return_changed, &app);
+    app.book.OnClicked(App, ui.Error, on_booked, &app);
 
     // Set default flight_type
     app.flight_type.SetSelected(0);
@@ -61,9 +61,9 @@ pub fn main() !void {
     ui.Main();
 }
 
-fn on_flight_type_selected(combo: ?*ui.Combobox, data: ?*anyopaque) callconv(.C) void {
-    const app: *App = @ptrCast(@alignCast(data));
-    const index = combo.?.Selected();
+fn on_flight_type_selected(combo: *ui.Combobox, app_opt: ?*App) ui.Error!void {
+    const app = app_opt orelse return error.LibUINullUserdata;
+    const index = combo.Selected();
     const value: App.FlightType = switch (index) {
         0 => .one_way,
         1 => .return_flight,
@@ -72,21 +72,22 @@ fn on_flight_type_selected(combo: ?*ui.Combobox, data: ?*anyopaque) callconv(.C)
     app.run_handle_error(&.{ .ChangeType = value });
 }
 
-fn on_leave_changed(dt: ?*ui.DateTimePicker, data: ?*anyopaque) callconv(.C) void {
-    const app: *App = @ptrCast(@alignCast(data));
-    const leave_date = dt.?.Time();
+fn on_leave_changed(dt: *ui.DateTimePicker, app_opt: ?*App) ui.Error!void {
+    const app = app_opt orelse return error.LibUINullUserdata;
+    const leave_date = dt.Time();
     app.run_handle_error(&.{ .ChangeLeaveDate = leave_date });
 }
 
-fn on_return_changed(dt: ?*ui.DateTimePicker, data: ?*anyopaque) callconv(.C) void {
-    const app: *App = @ptrCast(@alignCast(data));
-    const return_date = dt.?.Time();
+fn on_return_changed(dt: *ui.DateTimePicker, app_opt: ?*App) ui.Error!void {
+    const app = app_opt orelse return error.LibUINullUserdata;
+    const return_date = dt.Time();
     app.run_handle_error(&.{ .ChangeReturnDate = return_date });
 }
 
-fn on_booked(btn: *ui.Button, app: ?*App) void {
+fn on_booked(btn: *ui.Button, app_opt: ?*App) ui.Error!void {
+    const app = app_opt orelse return error.LibUINullUserdata;
     _ = btn;
-    app.?.run_handle_error(&.Book);
+    app.run_handle_error(&.Book);
 }
 
 const App = struct {

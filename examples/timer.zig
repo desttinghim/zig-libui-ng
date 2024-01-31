@@ -27,22 +27,22 @@ pub fn main() !void {
     };
 
     const button = try ui.Button.New("Say Something");
-    button.OnClicked(App, say_something, &app);
+    button.OnClicked(App, ui.Error, say_something, &app);
     box.Append(button.as_control(), .dont_stretch);
 
     box.Append(entry.as_control(), .stretch);
 
-    ui.Timer(1000, say_time, &app);
+    ui.Timer(App, ui.Error, 1000, say_time, &app);
 
-    window.OnClosing(void, on_closing, null);
+    window.OnClosing(void, ui.Error, on_closing, null);
 
     window.as_control().Show();
 
     ui.Main();
 }
 
-pub fn say_time(app_opt: ?*anyopaque) callconv(.C) ui.TimerAction {
-    const app: *App = @alignCast(@ptrCast(app_opt orelse @panic("Null userdata pointer")));
+pub fn say_time(app_opt: ?*App) ui.Error!ui.TimerAction {
+    const app: *App = app_opt orelse return error.LibUINullUserdata;
     const time = std.time.timestamp();
     var buffer = [_]u8{0} ** 64;
     const string = std.fmt.bufPrintZ(&buffer, "The current timestamp is: {}\n", .{time}) catch @panic("Error formatting text.");
@@ -50,12 +50,12 @@ pub fn say_time(app_opt: ?*anyopaque) callconv(.C) ui.TimerAction {
     return .rearm;
 }
 
-pub fn on_closing(_: *ui.Window, _: ?*void) ui.Window.ClosingAction {
+pub fn on_closing(_: *ui.Window, _: ?*void) ui.Error!ui.Window.ClosingAction {
     ui.Quit();
     return .should_close;
 }
 
-pub fn say_something(_: *ui.Button, app_opt: ?*App) void {
-    const app = app_opt orelse @panic("Null userdata pointer");
+pub fn say_something(_: *ui.Button, app_opt: ?*App) ui.Error!void {
+    const app: *App = app_opt orelse return error.LibUINullUserdata;
     app.entry.Append("Saying something\n");
 }

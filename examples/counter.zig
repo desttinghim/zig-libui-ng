@@ -3,6 +3,8 @@ const ui = @import("ui");
 
 var counter: usize = 0;
 
+const Error = ui.Error || std.fmt.BufPrintError;
+
 pub fn main() !void {
     var init_data = ui.InitData{
         .options = .{ .Size = 0 },
@@ -30,8 +32,8 @@ pub fn main() !void {
     main_window.SetChild(hbox.as_control());
 
     // Connect event handlers
-    button.OnClicked(ui.Label, on_clicked, label);
-    main_window.OnClosing(void, on_closing, null);
+    button.OnClicked(ui.Label, Error, on_clicked, label);
+    main_window.OnClosing(void, ui.Error, on_closing, null);
 
     // Show the window
     main_window.as_control().Show();
@@ -39,16 +41,17 @@ pub fn main() !void {
     ui.Main();
 }
 
-pub fn on_closing(_: *ui.Window, _: ?*void) ui.Window.ClosingAction {
+pub fn on_closing(_: *ui.Window, _: ?*void) !ui.Window.ClosingAction {
     ui.Quit();
     return .should_close;
 }
 
-pub fn on_clicked(_: *ui.Button, label: ?*ui.Label) void {
+pub fn on_clicked(_: *ui.Button, label_opt: ?*ui.Label) Error!void {
+    const label = label_opt orelse return error.LibUINullUserdata;
     counter += 1;
 
     var buf: [255]u8 = undefined;
-    const new_string = std.fmt.bufPrintZ(&buf, "{}", .{counter}) catch "ERROR";
+    const new_string = try std.fmt.bufPrintZ(&buf, "{}", .{counter});
 
-    label.?.SetText(new_string);
+    label.SetText(new_string);
 }

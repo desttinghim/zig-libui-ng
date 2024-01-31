@@ -66,9 +66,9 @@ pub fn main() !void {
     hbox.Append((try ui.Label.New("Fahrenheit")).as_control(), .dont_stretch);
 
     // Connect event handlers
-    main_window.OnClosing(void, on_closing, null);
-    celsius_spinbox.OnChanged(on_changed, &current_temperature);
-    fahrenheit_spinbox.OnChanged(on_changed, &current_temperature);
+    main_window.OnClosing(void, ui.Error, on_closing, null);
+    celsius_spinbox.OnChanged(Temperature, ui.Error, on_changed, &current_temperature);
+    fahrenheit_spinbox.OnChanged(Temperature, ui.Error, on_changed, &current_temperature);
 
     // Show the window
     main_window.as_control().Show();
@@ -76,13 +76,13 @@ pub fn main() !void {
     ui.Main();
 }
 
-pub fn on_closing(_: *ui.Window, _: ?*void) ui.Window.ClosingAction {
+pub fn on_closing(_: *ui.Window, _: ?*void) !ui.Window.ClosingAction {
     ui.Quit();
     return .should_close;
 }
 
-pub fn on_changed(spinbox: ?*ui.Spinbox, data: ?*anyopaque) callconv(.C) void {
-    const current_temperature: *Temperature = @ptrCast(@alignCast(data));
+pub fn on_changed(spinbox: *ui.Spinbox, temperature_opt: ?*Temperature) ui.Error!void {
+    const current_temperature: *Temperature = temperature_opt orelse return error.LibUINullUserdata;
     if (spinbox == celsius_spinbox) {
         current_temperature.* = .{ .celsius = @floatFromInt(celsius_spinbox.Value()) };
         fahrenheit_spinbox.SetValue(@intFromFloat(current_temperature.as_fahrenheit()));

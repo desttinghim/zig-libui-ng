@@ -2,7 +2,7 @@ const std = @import("std");
 const ui = @import("ui");
 const extras = @import("ui-extras");
 
-pub fn on_closing(_: *ui.Window, _: ?*void) ui.Window.ClosingAction {
+pub fn on_closing(_: *ui.Window, _: ?*void) !ui.Window.ClosingAction {
     ui.Quit();
     return .should_close;
 }
@@ -23,7 +23,7 @@ pub fn main() !void {
     const main_window = try ui.Window.New("Hello, World!", 320, 240, .hide_menubar);
 
     main_window.as_control().Show();
-    main_window.OnClosing(void, on_closing, null);
+    main_window.OnClosing(void, ui.Error, on_closing, null);
 
     const vbox = try ui.Box.New(.Vertical);
     main_window.SetChild(vbox.as_control());
