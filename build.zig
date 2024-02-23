@@ -9,16 +9,14 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
     });
 
-    // Re-export libui artifact
-    b.installArtifact(libui.artifact("ui"));
-
     const ui_module = b.addModule("ui", .{
-        .source_file = .{ .path = "src/ui.zig" },
+        .root_source_file = .{ .path = "src/ui.zig" },
     });
+    ui_module.linkLibrary(libui.artifact("ui"));
 
     const ui_extras_module = b.addModule("ui-extras", .{
-        .source_file = .{ .path = "src/extras.zig" },
-        .dependencies = &.{.{
+        .root_source_file = .{ .path = "src/extras.zig" },
+        .imports = &.{.{
             .name = "ui",
             .module = ui_module,
         }},
@@ -33,8 +31,7 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
         });
-        exe.addModule("ui", ui_module);
-        exe.linkLibrary(libui.artifact("ui"));
+        exe.root_module.addImport("ui", ui_module);
         exe.subsystem = std.Target.SubSystem.Windows;
 
         exe.addWin32ResourceFile(.{
@@ -60,8 +57,7 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
         });
-        exe.addModule("ui", ui_module);
-        exe.linkLibrary(libui.artifact("ui"));
+        exe.root_module.addImport("ui", ui_module);
         exe.subsystem = std.Target.SubSystem.Windows;
 
         exe.addWin32ResourceFile(.{
@@ -87,9 +83,8 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
         });
-        exe.addModule("ui", ui_module);
-        exe.addModule("ui-extras", ui_extras_module);
-        exe.linkLibrary(libui.artifact("ui"));
+        exe.root_module.addImport("ui", ui_module);
+        exe.root_module.addImport("ui-extras", ui_extras_module);
         exe.subsystem = std.Target.SubSystem.Windows;
 
         exe.addWin32ResourceFile(.{
@@ -115,8 +110,7 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
         });
-        exe.addModule("ui", ui_module);
-        exe.linkLibrary(libui.artifact("ui"));
+        exe.root_module.addImport("ui", ui_module);
         exe.subsystem = std.Target.SubSystem.Windows;
 
         exe.addWin32ResourceFile(.{
@@ -142,8 +136,7 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
         });
-        exe.addModule("ui", ui_module);
-        exe.linkLibrary(libui.artifact("ui"));
+        exe.root_module.addImport("ui", ui_module);
         exe.subsystem = std.Target.SubSystem.Windows;
 
         exe.addWin32ResourceFile(.{
@@ -169,8 +162,7 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
         });
-        exe.addModule("ui", ui_module);
-        exe.linkLibrary(libui.artifact("ui"));
+        exe.root_module.addImport("ui", ui_module);
         exe.subsystem = std.Target.SubSystem.Windows;
 
         exe.addWin32ResourceFile(.{
@@ -196,9 +188,8 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
         });
-        exe.addModule("ui", ui_module);
-        exe.addModule("ui-extras", ui_extras_module);
-        exe.linkLibrary(libui.artifact("ui"));
+        exe.root_module.addImport("ui", ui_module);
+        exe.root_module.addImport("ui-extras", ui_extras_module);
         exe.subsystem = std.Target.SubSystem.Windows;
 
         exe.addWin32ResourceFile(.{
@@ -224,8 +215,7 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
         });
-        exe.addModule("ui", ui_module);
-        exe.linkLibrary(libui.artifact("ui"));
+        exe.root_module.addImport("ui", ui_module);
         exe.subsystem = std.Target.SubSystem.Windows;
 
         b.installArtifact(exe);

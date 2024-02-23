@@ -573,26 +573,19 @@ pub const Spinbox = opaque {
     }
 
     pub extern fn uiSpinboxValue(s: *Spinbox) c_int;
-    pub extern fn uiSpinboxValueDouble(s: *Spinbox) f64;
     pub extern fn uiSpinboxSetValue(s: *Spinbox, value: c_int) void;
-    pub extern fn uiSpinboxSetValueDouble(s: *Spinbox, value: f64) void;
     pub extern fn uiSpinboxOnChanged(s: *Spinbox, f: ?*const fn (?*Spinbox, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
     pub extern fn uiNewSpinbox(min: c_int, max: c_int) ?*Spinbox;
-    pub extern fn uiNewSpinboxDouble(min: f64, max: f64, precision: c_int) ?*Spinbox;
 
     pub const Value = uiSpinboxValue;
-    pub const ValueDouble = uiSpinboxValueDouble;
     pub const SetValue = uiSpinboxSetValue;
-    pub const SetValueDouble = uiSpinboxSetValueDouble;
     pub const OnChanged = uiSpinboxOnChanged;
     pub const Type = union(enum) {
         Integer: struct { min: c_int, max: c_int },
-        Double: struct { min: f64, max: f64, precision: c_int },
     };
     pub fn New(t: Type) !*Spinbox {
         return switch (t) {
             .Integer => |int| uiNewSpinbox(int.min, int.max),
-            .Double => |double| uiNewSpinboxDouble(double.min, double.max, double.precision),
         } orelse error.InitSpinbox;
     }
 };

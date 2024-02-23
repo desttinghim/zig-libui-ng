@@ -4,8 +4,8 @@
     .paths = .{""},
     .dependencies = .{
         .libui = .{
-            .url = "https://github.com/desttinghim/libui-ng/archive/9181e9c5e50d5e909e5ed146dc45223d5989e473.tar.gz",
-            .hash = "122080410bb5867b2fbce95f6a7803a442c3a7c19d817916cd39657f90a9580c3849",
+            .url = "https://github.com/desttinghim/libui-ng/archive/8f1cf77be2906d6f0c15b0a2f97667f97624a856.tar.gz",
+            .hash = "1220698758aa5cd9c04cceaa31c894ed970fea97efd196213eb0cdac66b611432d76",
         },
     },
 }
