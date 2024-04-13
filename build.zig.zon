@@ -1,5 +1,5 @@
 .{
-    .name = "trex",
+    .name = "zig-libui-ng",
     .version = "0.1.0",
     .paths = .{""},
     .dependencies = .{
