@@ -30,7 +30,7 @@ const CustomWidget = struct {
     }
 
     fn Draw(handler: *ui.Area.Handler, area: *ui.Area, draw_params: *ui.Draw.Params) callconv(.C) void {
-        const this: *@This() = @fieldParentPtr(@This(), "handler", handler);
+        const this: *@This() = @fieldParentPtr("handler", handler);
         _ = this;
         _ = area;
 

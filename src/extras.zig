@@ -193,7 +193,7 @@ pub fn Table(comptime T: type) type {
         /// Internal convenience function for `Table(T)`.
         /// Gets a pointer to `Table(T)` from a pointer to a `ui.Table.Model`.
         fn from_model_handler(handler: *ui.Table.Model.Handler) *@This() {
-            return @fieldParentPtr(@This(), "handler", handler);
+            return @fieldParentPtr("handler", handler);
         }
 
         /// Implementation of `numColumns` for `ui.Table.Model.Handler`. Returns the number
