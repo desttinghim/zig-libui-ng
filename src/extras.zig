@@ -17,6 +17,16 @@ pub const TableType = opaque {
 /// - T should be a struct.
 /// - Each field in a struct will correspond to a `column` in the `ui.Table.Model`.
 /// - Integers, floats, and strings are represented as `ui.Table.Value.String` types.
+/// - T may define `fn setCell(*T, *const ui.Table.Value, usize) bool` to allow input handling.
+///     - Argument 1 is a mutable pointer to the row value
+///     - Argument 2 is the new value
+///     - Argument 3 is the column being edited
+///     - Return `true` to indicate the value has been handled.
+///     - Return `false` to use the default input handling for this column.
+/// - T may define `fn cellValue(*const T, usize) ?*ui.Table.Value`
+///     - Argument 1 is a const pointer to the row value
+///     - Argument 2 is the column
+///     - Return null to use the default formatting
 ///
 /// Note that a `column` in `ui.Table.Model` is _not_ the same as a visual column in a `ui.Table`
 /// widget. See `ui.Table.Model` and `ui.Table.AppendColumn` for more details.
@@ -252,6 +262,11 @@ pub fn Table(comptime T: type) type {
             if (slice.len < row) @panic("cellValue row parameter out of bounds");
             const data = &slice[row];
 
+            if (@hasDecl(T, "cellValue")) {
+                const new_value = T.cellValue(data, column);
+                if (new_value) |v| return v;
+            }
+
             var value_param: ?ui.Table.Value.TypeParameters = null;
             switch (column) {
                 inline 0...num_columns - 1 => |field_index| {
@@ -314,6 +329,11 @@ pub fn Table(comptime T: type) type {
                 return;
             };
 
+            if (@hasDecl(T, "setCell")) {
+                const handled = T.setCell(data, value, column);
+                if (handled) return;
+            }
+
             const value_t = @as(ui.Table.Value.Type, value.GetType());
 
             switch (column) {
@@ -328,7 +348,6 @@ pub fn Table(comptime T: type) type {
                         TableType.Color => {
                             std.debug.assert(value_t == .Color);
                             @field(data, field.name) = value.Color();
-                            // @compileError("TableType.Color is unimplemented");
                         },
                         TableType.Image => {
                             std.debug.assert(value_t == .Image);

@@ -1976,6 +1976,11 @@ pub const Table = opaque {
             Never = -1,
             Always = -2,
             _,
+
+            pub fn column(col: c_uint) Editable {
+                std.debug.assert(col <= std.math.maxInt(c_int));
+                return @enumFromInt(col);
+            }
         };
     };
     pub fn AppendColumn(t: *Table, name: [*:0]const u8, params: ColumnParameters) void {
