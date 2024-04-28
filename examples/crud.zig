@@ -12,17 +12,16 @@ pub fn on_closing(_: *ui.Window, _: ?*void) !ui.Window.ClosingAction {
 const OnClickError = std.mem.Allocator.Error || ui.Error || error{
     Other,
 };
-pub fn on_click(_: *ui.Button, table_opt: ?*extras.Table(Edit)) OnClickError!void {
-    const table = table_opt orelse return error.LibUIPassedNullPointer;
-    const allocator = table.allocator orelse return error.Other;
-    const name = try allocator.dupeZ(u8, "");
-    const surname = try allocator.dupeZ(u8, "");
-    const button_text = try allocator.dupeZ(u8, "Delete");
-    try table.data.array_list.append(.{ .name = name, .surname = surname, .button_text = button_text });
-    table.model.RowInserted(@intCast(table.data.array_list.items.len - 1));
+pub fn on_click(_: *ui.Button, app_opt: ?*App) OnClickError!void {
+    const app = app_opt orelse return error.LibUIPassedNullPointer;
+    const name = try app.allocator.dupeZ(u8, "");
+    const surname = try app.allocator.dupeZ(u8, "");
+    const button_text = try app.allocator.dupeZ(u8, "Delete");
+    try app.table.data.array_list.append(.{ .name = name, .surname = surname, .button_text = button_text });
+    app.table.model.RowInserted(@intCast(app.table.data.array_list.items.len - 1));
 }
 
-pub fn on_table_button_clicked(table: *extras.Table(Edit), value: *Edit, column: usize, row: usize) void {
+pub fn on_table_button_clicked(table: *extras.Table(ViewData), value: *ViewData, column: usize, row: usize) void {
     std.log.debug("Button for column {}, row {}, clicked. Value is: {}", .{ column, row, value });
     std.debug.assert(column == 1);
 
@@ -37,7 +36,7 @@ pub fn on_table_button_clicked(table: *extras.Table(Edit), value: *Edit, column:
 }
 
 const PrefixError = ui.Error;
-fn on_prefix_changed(entry: *ui.Entry, table_opt: ?*extras.Table(Edit)) PrefixError!void {
+fn on_prefix_changed(entry: *ui.Entry, table_opt: ?*App) PrefixError!void {
     const table = table_opt orelse return error.LibUIPassedNullPointer;
     _ = table;
     const new_prefix = entry.Text();
@@ -73,15 +72,23 @@ pub fn main() !void {
 
     const string_allocator = gpa.allocator();
 
-    // Allocate a space on the stack to store a `extras.Table(TestStruct)`.
-    var table: extras.Table(Edit) = undefined;
+    // Our context struct
+    var app = App.init(gpa.allocator());
+    defer app.deinit();
+
+    try app.model.appendSlice(&.{
+        .{ .id = 0, .name = "Hans", .surname = "Emil", .age = 20, .height = 5.5 },
+        .{ .id = 1, .name = "Max", .surname = "Mustermann", .age = 21, .height = 5.75 },
+        .{ .id = 2, .name = "Roman", .surname = "Tisch", .age = 22, .height = 6.0 },
+    });
+    app.current_id = 3;
 
     // Create an entry for searching our data
     const hbox = try ui.Box.New(.Horizontal);
     const filter_label = try ui.Label.New("Filter prefix:");
     const filter_prefix = try ui.Entry.New(.Search);
 
-    filter_prefix.OnChanged(extras.Table(Edit), PrefixError, on_prefix_changed, &table);
+    filter_prefix.OnChanged(App, PrefixError, on_prefix_changed, &app);
 
     hbox.Append(filter_label.as_control(), .dont_stretch);
     hbox.Append(filter_prefix.as_control(), .stretch);
@@ -90,16 +97,13 @@ pub fn main() !void {
     vbox.Append(hbox.as_control(), .dont_stretch);
 
     // Initialize the `extras.Table(TestStruct)` and pass it an ArrayList
-    var data = std.ArrayList(Edit).init(gpa.allocator());
-    defer data.deinit();
-
-    try table.init(.{ .array_list = &data }, string_allocator);
-    defer table.deinit(); // Defer deinitalization of `extras.Table(TestStruct)` to end of scope
-    table.button_callback = on_table_button_clicked;
+    try app.table.init(.{ .array_list = &app.view }, string_allocator);
+    defer app.table.deinit(); // Defer deinitalization of `extras.Table(TestStruct)` to end of scope
+    app.table.button_callback = on_table_button_clicked;
 
     // Create a table view without using the default column generator
     const Editable = ui.Table.ColumnParameters.Editable;
-    const custom_table_view = try table.NewView(.{});
+    const custom_table_view = try app.table.NewView(.{});
     custom_table_view.AppendColumn("Editable", .{ .Checkbox = .{
         .editable = .Always,
         .checkbox_column = 0,
@@ -127,21 +131,52 @@ pub fn main() !void {
     vbox.Append(custom_table_view.as_control(), .stretch);
 
     const button = try ui.Button.New("Add Row");
-    button.OnClicked(extras.Table(Edit), OnClickError, on_click, &table);
+    button.OnClicked(App, OnClickError, on_click, &app);
     vbox.Append(button.as_control(), .dont_stretch);
 
     ui.Main();
 }
 
-const Edit = struct {
+const App = struct {
+    allocator: std.mem.Allocator,
+    model: std.ArrayList(ModelData),
+    view: std.ArrayList(ViewData),
+    table: extras.Table(ViewData),
+    current_id: usize = 0,
+
+    fn init(allocator: std.mem.Allocator) App {
+        return .{
+            .allocator = allocator,
+            .model = std.ArrayList(ModelData).init(allocator),
+            .view = std.ArrayList(ViewData).init(allocator),
+            .table = undefined,
+        };
+    }
+
+    fn deinit(app: *App) void {
+        app.model.deinit();
+        app.view.deinit();
+    }
+};
+
+const ModelData = struct {
+    name: [:0]const u8,
+    surname: [:0]const u8,
+    age: f64,
+    height: f64,
+    id: usize,
+};
+
+const ViewData = struct {
     editable: extras.TableType.Checkbox = .{ .data = 1 },
     button_text: [:0]const u8,
     name: [:0]const u8,
     surname: [:0]const u8,
     age: u64 = 0,
     height: f64 = 0,
+    id: usize = 0,
 
-    pub fn setCell(edit: *Edit, value: *const ui.Table.Value, column: usize) bool {
+    pub fn setCell(edit: *ViewData, value: *const ui.Table.Value, column: usize) bool {
         switch (column) {
             5 => {
                 const string = std.mem.span(value.String());
@@ -172,7 +207,7 @@ const Edit = struct {
         return true;
     }
 
-    pub fn cellValue(edit: *const Edit, column: usize) ?*ui.Table.Value {
+    pub fn cellValue(edit: *const ViewData, column: usize) ?*ui.Table.Value {
         switch (column) {
             5 => {
                 const modf = std.math.modf(edit.height);
