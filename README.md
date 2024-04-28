@@ -7,6 +7,8 @@ type has been made an opaque with the extern functions embedded within in them.
 Additionally, functions using boolean values have been converted to use `bool`.
 Some helper functions have been made for writing event handlers.
 
+This library currently tracks the latest stable zig release `0.12.0`.  
+
 ## Example
 ```zig
 const std = @import("std");
@@ -41,6 +43,6 @@ pub fn main() !void {
 
 ## Planned Features
 - [x] Comptime function for defining a `Table` based on a struct
-- [ ] Nicer bindings for event callbacks
+- [x] Nicer bindings for event callbacks
 - [ ] More examples
 - [ ] Project Template
