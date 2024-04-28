@@ -38,6 +38,7 @@ pub fn main() !void {
         .data = App.Data.init(gpa.allocator()),
         .data_allocator = gpa.allocator(),
         .list = vbox_list,
+        .list_buttons = std.ArrayList(*ui.Button).init(gpa.allocator()),
         .arena_current = std.heap.ArenaAllocator.init(gpa.allocator()),
         .arena_old = std.heap.ArenaAllocator.init(gpa.allocator()),
         .entry_name = entry_name,
@@ -96,6 +97,10 @@ const App = struct {
     data: Data,
     data_allocator: std.mem.Allocator,
     list: *ui.Box,
+    // We need to store what items are in the list view,
+    // because libui expects us to free them when we are
+    // done with them.
+    list_buttons: std.ArrayList(*ui.Button),
     arena_current: std.heap.ArenaAllocator,
     arena_old: std.heap.ArenaAllocator,
     entry_name: *ui.Entry,
@@ -116,6 +121,7 @@ const App = struct {
             app.data_allocator.free(datum.name);
             app.data_allocator.free(datum.surname);
         }
+        app.list_buttons.deinit();
         app.data.deinit();
         app.arena_current.deinit();
         app.arena_old.deinit();
@@ -178,8 +184,9 @@ const App = struct {
 
         var to_clear = app.list.NumChildren();
         while (to_clear != 0) : (to_clear -= 1) {
-            // TODO: This seems to trigger a memory leak error in libui
             app.list.Delete(0);
+            const btn = app.list_buttons.orderedRemove(0);
+            btn.as_control().Free();
         }
         std.debug.assert(app.list.NumChildren() == 0);
 
@@ -201,6 +208,7 @@ const App = struct {
                 const btn = try ui.Button.New(name_str);
                 app.list.Append(btn.as_control(), .dont_stretch);
                 btn.OnClicked(anyopaque, SelectError, on_item_clicked, @ptrFromInt(id));
+                try app.list_buttons.append(btn);
             }
         }
     }
