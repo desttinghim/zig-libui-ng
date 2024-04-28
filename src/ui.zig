@@ -1245,6 +1245,7 @@ pub const Area = opaque {
             NSubtract = 37,
             NMultiply = 38,
             NDivide = 39,
+            _,
         };
     };
 
