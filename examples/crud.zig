@@ -1,50 +1,9 @@
-//! A simple example of a CRUD (Create Read Update Delete) application using libui.
-//! Makes use of ui-extras to reduce boilerplate when creating the table.
 const std = @import("std");
 const ui = @import("ui");
-const extras = @import("ui-extras");
 
-pub fn on_closing(_: *ui.Window, _: ?*void) !ui.Window.ClosingAction {
-    ui.Quit();
-    return .should_close;
-}
-
-const OnClickError = std.mem.Allocator.Error || ui.Error || error{
-    Other,
-};
-pub fn on_click(_: *ui.Button, app_opt: ?*App) OnClickError!void {
-    const app = app_opt orelse return error.LibUIPassedNullPointer;
-    const name = try app.allocator.dupeZ(u8, "");
-    const surname = try app.allocator.dupeZ(u8, "");
-    const button_text = try app.allocator.dupeZ(u8, "Delete");
-    try app.table.data.array_list.append(.{ .name = name, .surname = surname, .button_text = button_text });
-    app.table.model.RowInserted(@intCast(app.table.data.array_list.items.len - 1));
-}
-
-pub fn on_table_button_clicked(table: *extras.Table(ViewData), value: *ViewData, column: usize, row: usize) void {
-    std.log.debug("Button for column {}, row {}, clicked. Value is: {}", .{ column, row, value });
-    std.debug.assert(column == 1);
-
-    const allocator = table.allocator orelse @panic("");
-
-    allocator.free(table.data.array_list.items[row].name);
-    allocator.free(table.data.array_list.items[row].surname);
-    allocator.free(table.data.array_list.items[row].button_text);
-
-    _ = table.data.array_list.orderedRemove(row);
-    table.model.RowDeleted(@intCast(row));
-}
-
-const PrefixError = ui.Error;
-fn on_prefix_changed(entry: *ui.Entry, table_opt: ?*App) PrefixError!void {
-    const table = table_opt orelse return error.LibUIPassedNullPointer;
-    _ = table;
-    const new_prefix = entry.Text();
-    std.log.debug("Prefix changed: {s}", .{new_prefix});
-}
+var global_app: App = undefined;
 
 pub fn main() !void {
-    // Initialize libui
     var init_data = ui.InitData{
         .options = .{ .Size = 0 },
     };
@@ -55,168 +14,240 @@ pub fn main() !void {
     };
     defer ui.Uninit();
 
-    // Create a ui.Window
-    const main_window = try ui.Window.New("CRUD", 480, 240, .hide_menubar);
-
-    main_window.as_control().Show();
-    main_window.OnClosing(void, ui.Error, on_closing, null);
-
-    const vbox = try ui.Box.New(.Vertical);
-    main_window.SetChild(vbox.as_control());
-
-    vbox.SetPadded(true);
-    main_window.SetMargined(true);
-
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
 
-    const string_allocator = gpa.allocator();
+    // Initialize components
+    const main_window = try ui.Window.New("CRUD", 320, 240, .hide_menubar);
+    const vbox = try ui.Box.New(.Vertical);
+    const hbox_filter = try ui.Box.New(.Horizontal);
+    const hbox_content = try ui.Box.New(.Horizontal);
+    const hbox_edit = try ui.Box.New(.Horizontal);
+    const vbox_list = try ui.Box.New(.Vertical);
+    const form_edit = try ui.Form.New();
+    const label_filter = try ui.Label.New("Filter prefix:");
+    const entry_filter = try ui.Entry.New(.Search);
+    const entry_name = try ui.Entry.New(.Entry);
+    const entry_surname = try ui.Entry.New(.Entry);
+    const btn_create = try ui.Button.New("Create");
+    const btn_update = try ui.Button.New("Update");
+    const btn_delete = try ui.Button.New("Delete");
 
-    // Our context struct
-    var app = App.init(gpa.allocator());
+    var app = &global_app;
+    app.* = App{
+        .data = App.Data.init(gpa.allocator()),
+        .data_allocator = gpa.allocator(),
+        .list = vbox_list,
+        .arena_current = std.heap.ArenaAllocator.init(gpa.allocator()),
+        .arena_old = std.heap.ArenaAllocator.init(gpa.allocator()),
+        .entry_name = entry_name,
+        .entry_surname = entry_surname,
+    };
     defer app.deinit();
 
-    try app.model.appendSlice(&.{
-        .{ .id = 0, .name = "Hans", .surname = "Emil", .age = 20, .height = 5.5 },
-        .{ .id = 1, .name = "Max", .surname = "Mustermann", .age = 21, .height = 5.75 },
-        .{ .id = 2, .name = "Roman", .surname = "Tisch", .age = 22, .height = 6.0 },
-    });
-    app.current_id = 3;
+    try app.addDatum("Hans", "Emil");
+    try app.addDatum("Max", "Mustermann");
+    try app.addDatum("Roman", "Tisch");
 
-    // Create an entry for searching our data
-    const hbox = try ui.Box.New(.Horizontal);
-    const filter_label = try ui.Label.New("Filter prefix:");
-    const filter_prefix = try ui.Entry.New(.Search);
+    try app.updateList(null);
 
-    filter_prefix.OnChanged(App, PrefixError, on_prefix_changed, &app);
+    // Padding + Margins
+    main_window.SetMargined(true);
+    vbox.SetPadded(true);
+    hbox_filter.SetPadded(true);
+    hbox_content.SetPadded(true);
+    hbox_edit.SetPadded(true);
+    form_edit.SetPadded(true);
 
-    hbox.Append(filter_label.as_control(), .dont_stretch);
-    hbox.Append(filter_prefix.as_control(), .stretch);
-    hbox.SetPadded(true);
+    // Layout
+    main_window.SetChild(vbox.as_control());
 
-    vbox.Append(hbox.as_control(), .dont_stretch);
+    vbox.Append(hbox_filter.as_control(), .dont_stretch);
+    vbox.Append(hbox_content.as_control(), .stretch);
+    vbox.Append(hbox_edit.as_control(), .dont_stretch);
 
-    // Initialize the `extras.Table(TestStruct)` and pass it an ArrayList
-    try app.table.init(.{ .array_list = &app.view }, string_allocator);
-    defer app.table.deinit(); // Defer deinitalization of `extras.Table(TestStruct)` to end of scope
-    app.table.button_callback = on_table_button_clicked;
+    hbox_content.Append(vbox_list.as_control(), .stretch);
+    hbox_content.Append(form_edit.as_control(), .stretch);
 
-    // Create a table view without using the default column generator
-    const Editable = ui.Table.ColumnParameters.Editable;
-    const custom_table_view = try app.table.NewView(.{});
-    custom_table_view.AppendColumn("Editable", .{ .Checkbox = .{
-        .editable = .Always,
-        .checkbox_column = 0,
-    } });
-    custom_table_view.AppendColumn("Name", .{ .Text = .{
-        .editable = Editable.column(0),
-        .text_column = 2,
-    } });
-    custom_table_view.AppendColumn("Surname", .{ .Text = .{
-        .editable = Editable.column(0),
-        .text_column = 3,
-    } });
-    custom_table_view.AppendColumn("Age", .{ .Text = .{
-        .editable = Editable.column(0),
-        .text_column = 4,
-    } });
-    custom_table_view.AppendColumn("Height", .{ .Text = .{
-        .editable = Editable.column(0),
-        .text_column = 5,
-    } });
-    custom_table_view.AppendColumn("", .{ .Button = .{
-        .button_column = 1,
-        .button_clickable = .Always,
-    } });
-    vbox.Append(custom_table_view.as_control(), .stretch);
+    hbox_filter.Append(label_filter.as_control(), .dont_stretch);
+    hbox_filter.Append(entry_filter.as_control(), .dont_stretch);
 
-    const button = try ui.Button.New("Add Row");
-    button.OnClicked(App, OnClickError, on_click, &app);
-    vbox.Append(button.as_control(), .dont_stretch);
+    form_edit.Append("Name:", entry_name.as_control(), .dont_stretch);
+    form_edit.Append("Surname:", entry_surname.as_control(), .dont_stretch);
 
+    hbox_edit.Append(btn_create.as_control(), .dont_stretch);
+    hbox_edit.Append(btn_update.as_control(), .dont_stretch);
+    hbox_edit.Append(btn_delete.as_control(), .dont_stretch);
+
+    // Connect
+    main_window.OnClosing(App, ui.Error, on_closing, app);
+    entry_filter.OnChanged(App, FilterError, on_filter_changed, app);
+    btn_create.OnClicked(App, CreateError, on_create, app);
+    btn_update.OnClicked(App, UpdateError, on_update, app);
+    btn_delete.OnClicked(App, DeleteError, on_delete, app);
+
+    // Show the window and start ui main
+    main_window.as_control().Show();
     ui.Main();
 }
 
 const App = struct {
-    allocator: std.mem.Allocator,
-    model: std.ArrayList(ModelData),
-    view: std.ArrayList(ViewData),
-    table: extras.Table(ViewData),
-    current_id: usize = 0,
+    id: usize = 1,
+    data: Data,
+    data_allocator: std.mem.Allocator,
+    list: *ui.Box,
+    arena_current: std.heap.ArenaAllocator,
+    arena_old: std.heap.ArenaAllocator,
+    entry_name: *ui.Entry,
+    entry_surname: *ui.Entry,
+    current_filter: ?[]const u8 = null,
+    selected_id: ?usize = 0,
 
-    fn init(allocator: std.mem.Allocator) App {
-        return .{
-            .allocator = allocator,
-            .model = std.ArrayList(ModelData).init(allocator),
-            .view = std.ArrayList(ViewData).init(allocator),
-            .table = undefined,
-        };
-    }
+    const Datum = struct {
+        name: []const u8,
+        surname: []const u8,
+    };
+
+    const Data = std.AutoHashMap(usize, Datum);
 
     fn deinit(app: *App) void {
-        app.model.deinit();
-        app.view.deinit();
-    }
-};
-
-const ModelData = struct {
-    name: [:0]const u8,
-    surname: [:0]const u8,
-    age: f64,
-    height: f64,
-    id: usize,
-};
-
-const ViewData = struct {
-    editable: extras.TableType.Checkbox = .{ .data = 1 },
-    button_text: [:0]const u8,
-    name: [:0]const u8,
-    surname: [:0]const u8,
-    age: u64 = 0,
-    height: f64 = 0,
-    id: usize = 0,
-
-    pub fn setCell(edit: *ViewData, value: *const ui.Table.Value, column: usize) bool {
-        switch (column) {
-            5 => {
-                const string = std.mem.span(value.String());
-                const feet_i = std.mem.indexOfScalar(u8, string, '\'');
-                const inch_i = std.mem.indexOfScalar(u8, string, '"');
-                if (feet_i) |i| {
-                    const feet_str = std.mem.trim(u8, string[0..i], " \t");
-                    var feet = std.fmt.parseFloat(f64, feet_str) catch {
-                        std.debug.print("feet_i: {}\n", .{i});
-                        return true;
-                    };
-                    if (inch_i) |a| inches: {
-                        if (a < i) return true;
-                        const inch_str = std.mem.trim(u8, string[i + 1 ..][0 .. a - i - 1], " \t");
-                        const inches = std.fmt.parseFloat(f64, inch_str) catch {
-                            std.debug.print("inch_i: {}\tinch_str: {s}\n", .{ a, inch_str });
-                            break :inches;
-                        };
-                        feet += inches / 12;
-                    }
-                    edit.height = feet;
-                } else {
-                    edit.height = std.fmt.parseFloat(f64, string) catch return true;
-                }
-            },
-            else => return false,
+        var iter = app.data.valueIterator();
+        while (iter.next()) |datum| {
+            app.data_allocator.free(datum.name);
+            app.data_allocator.free(datum.surname);
         }
-        return true;
+        app.data.deinit();
+        app.arena_current.deinit();
+        app.arena_old.deinit();
     }
 
-    pub fn cellValue(edit: *const ViewData, column: usize) ?*ui.Table.Value {
-        switch (column) {
-            5 => {
-                const modf = std.math.modf(edit.height);
-                const min_size = std.fmt.format_float.min_buffer_size;
-                var buf: [min_size]u8 = undefined;
-                const string = std.fmt.bufPrintZ(&buf, "{d}' {d}\"", .{ modf.ipart, @round(modf.fpart * 12) }) catch return null;
-                return ui.Table.Value.New(.{ .String = string }) catch null;
-            },
-            else => return null,
+    const SetSelectedError = std.mem.Allocator.Error;
+    fn setSelected(app: *App, selected_id: usize) SetSelectedError!void {
+        app.selected_id = null;
+        if (selected_id == 0) return;
+        const datum = app.data.get(selected_id) orelse return;
+        app.selected_id = selected_id;
+        const name = try app.arena_current.allocator().dupeZ(u8, datum.name);
+        const surname = try app.arena_current.allocator().dupeZ(u8, datum.surname);
+        app.entry_name.SetText(name);
+        app.entry_surname.SetText(surname);
+    }
+
+    const AddDatumError = std.mem.Allocator.Error;
+    fn addDatum(app: *App, name: []const u8, surname: []const u8) AddDatumError!void {
+        const name_dup = try app.data_allocator.dupe(u8, name);
+        const surname_dup = try app.data_allocator.dupe(u8, surname);
+        try app.data.put(app.id, .{
+            .name = name_dup,
+            .surname = surname_dup,
+        });
+        app.id += 1;
+    }
+
+    const SetDatumError = std.mem.Allocator.Error;
+    fn setDatum(app: *App, id: usize, name: []const u8, surname: []const u8) !void {
+        const name_dup = try app.data_allocator.dupe(u8, name);
+        const surname_dup = try app.data_allocator.dupe(u8, surname);
+        try app.data.put(id, .{
+            .name = name_dup,
+            .surname = surname_dup,
+        });
+    }
+
+    fn deleteDatum(app: *App, id: usize) void {
+        app.selected_id = null;
+        const kv = app.data.fetchRemove(id) orelse return;
+        const datum = kv.value;
+        app.data_allocator.free(datum.name);
+        app.data_allocator.free(datum.surname);
+    }
+
+    fn rotateArenas(app: *App) void {
+        const arena = app.arena_old;
+        app.arena_old = app.arena_current;
+        app.arena_current = arena;
+    }
+
+    const ListUpdateError = std.fmt.AllocPrintError || error{InitButton};
+    fn updateList(app: *App, filter_text: ?[]const u8) ListUpdateError!void {
+        app.rotateArenas();
+        if (!app.arena_current.reset(.retain_capacity)) {
+            std.log.info("Failed to reset arena", .{});
+        }
+        const allocator = app.arena_current.allocator();
+
+        var to_clear = app.list.NumChildren();
+        while (to_clear != 0) : (to_clear -= 1) {
+            // TODO: This seems to trigger a memory leak error in libui
+            app.list.Delete(0);
+        }
+        std.debug.assert(app.list.NumChildren() == 0);
+
+        var iter = app.data.iterator();
+        while (iter.next()) |kv| {
+            const datum = kv.value_ptr.*;
+            const id = kv.key_ptr.*;
+            const keep = if (filter_text) |text| keep: {
+                const name_starts_with = std.mem.startsWith(u8, datum.name, text);
+                const surname_starts_with = std.mem.startsWith(u8, datum.surname, text);
+                break :keep name_starts_with or surname_starts_with;
+            } else true;
+
+            if (keep) {
+                const name_str = try std.fmt.allocPrintZ(allocator, "{s}, {s}", .{
+                    datum.surname,
+                    datum.name,
+                });
+                const btn = try ui.Button.New(name_str);
+                app.list.Append(btn.as_control(), .dont_stretch);
+                btn.OnClicked(anyopaque, SelectError, on_item_clicked, @ptrFromInt(id));
+            }
         }
     }
 };
+
+pub fn on_closing(_: *ui.Window, _: ?*App) !ui.Window.ClosingAction {
+    ui.Quit();
+    return .should_close;
+}
+
+const SelectError = ui.Error || App.SetSelectedError || error{};
+pub fn on_item_clicked(_: *ui.Button, userdata: ?*anyopaque) SelectError!void {
+    const id = @intFromPtr(userdata);
+    try global_app.setSelected(id);
+}
+
+const FilterError = ui.Error || App.ListUpdateError;
+pub fn on_filter_changed(entry: *ui.Entry, app_opt: ?*App) FilterError!void {
+    const app = app_opt orelse return error.LibUINullUserdata;
+    const text = std.mem.span(entry.Text());
+    app.current_filter = text;
+    try app.updateList(text);
+}
+
+const CreateError = ui.Error || App.AddDatumError || App.ListUpdateError;
+pub fn on_create(_: *ui.Button, app_opt: ?*App) CreateError!void {
+    const app = app_opt orelse return error.LibUINullUserdata;
+    const name = std.mem.span(app.entry_name.Text());
+    const surname = std.mem.span(app.entry_surname.Text());
+    try app.addDatum(name, surname);
+    try app.updateList(app.current_filter);
+}
+
+const UpdateError = ui.Error || App.ListUpdateError;
+pub fn on_update(_: *ui.Button, app_opt: ?*App) UpdateError!void {
+    const app = app_opt orelse return error.LibUINullUserdata;
+    const name = std.mem.span(app.entry_name.Text());
+    const surname = std.mem.span(app.entry_surname.Text());
+    const index = app.selected_id orelse return;
+    try app.setDatum(index, name, surname);
+    try app.updateList(app.current_filter);
+}
+
+const DeleteError = ui.Error || App.ListUpdateError;
+pub fn on_delete(_: *ui.Button, app_opt: ?*App) DeleteError!void {
+    const app = app_opt orelse return error.LibUINullUserdata;
+    const index = app.selected_id orelse return;
+    app.deleteDatum(index);
+    try app.updateList(app.current_filter);
+}
