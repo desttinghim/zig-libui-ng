@@ -536,7 +536,7 @@ pub const Checkbox = opaque {
     pub const Text = uiCheckboxText;
     pub const SetText = uiCheckboxText;
 
-    pub fn OnToggled(self: *Self, comptime T: type, f: *const fn (*Self, ?*T) void, userdata: ?*T) void {
+    pub fn OnToggled(self: *Self, comptime T: type, comptime E: type, f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
             fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
                 const err_ctx = ErrorContext{ .CheckboxOnToggled = self_opt };
