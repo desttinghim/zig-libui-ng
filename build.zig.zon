@@ -5,7 +5,7 @@
     .dependencies = .{
         .libui = .{
             .url = "git+https://github.com/desttinghim/libui-ng#wp-2025",
-            .hash = "1220c761be7b356a787ce476f885bbf51f4ac13fdbd32de5e97c7eedd6bbec737893",
+            .hash = "12203d72d66142dc8152493c65d617359010778706a686b4089bb8f9e89818fd548d",
         },
     },
 }
