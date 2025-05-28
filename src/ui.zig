@@ -63,7 +63,7 @@ pub const Error = error{ LibUIPassedNullPointer, LibUINullUserdata };
 pub const error_handler = if (@hasDecl(root, "OnError")) root.OnError else OnError;
 
 pub fn OnError(context: ErrorContext, userdata: ?*anyopaque, err: anyerror) void {
-    @setCold(true);
+    @branchHint(.cold);
     var buffer: [4096]u8 = undefined;
     const message = std.fmt.bufPrint(&buffer, "Error while executing callback - [Context] {} [User Data] {*} [Error] {}", .{ context, userdata, err }) catch buffer[0..];
     @panic(message);
@@ -597,12 +597,12 @@ pub const Entry = opaque {
     pub fn SetReadOnly(e: *Entry, readonly: c_int) void {
         return uiEntrySetReadOnly(e, @intFromBool(readonly));
     }
-    pub const Type = enum {
+    pub const TypeEnum = enum {
         Entry,
         Password,
         Search,
     };
-    pub fn New(t: Type) !*Entry {
+    pub fn New(t: TypeEnum) !*Entry {
         const new_entry = switch (t) {
             .Entry => uiNewEntry(),
             .Password => uiNewPasswordEntry(),
@@ -726,11 +726,11 @@ pub const Spinbox = opaque {
         uiSpinboxOnChanged(self, callback, userdata);
     }
 
-    pub const Type = union(enum) {
+    pub const TypeEnum = union(enum) {
         Integer: struct { min: c_int, max: c_int },
         Double: struct { min: f64, max: f64, precision: c_int },
     };
-    pub fn New(t: Type) !*Spinbox {
+    pub fn New(t: TypeEnum) !*Spinbox {
         return switch (t) {
             .Integer => |int| uiNewSpinbox(int.min, int.max),
             .Double => |double| uiNewSpinboxDouble(double.min, double.max, double.precision),
@@ -816,11 +816,11 @@ pub const Separator = opaque {
     pub extern fn uiNewHorizontalSeparator() ?*Separator;
     pub extern fn uiNewVerticalSeparator() ?*Separator;
 
-    pub const Type = enum {
+    pub const TypeEnum = enum {
         Horizontal,
         Vertical,
     };
-    pub fn New(t: Type) !*Separator {
+    pub fn New(t: TypeEnum) !*Separator {
         return switch (t) {
             .Horizontal => uiNewHorizontalSeparator(),
             .Vertical => uiNewVerticalSeparator(),
@@ -1012,12 +1012,12 @@ pub const DateTimePicker = opaque {
         }.callback;
         uiDateTimePickerOnChanged(self, callback, userdata);
     }
-    pub const Type = enum {
+    pub const TypeEnum = enum {
         DateTime,
         Date,
         Time,
     };
-    pub fn New(t: Type) !*DateTimePicker {
+    pub fn New(t: TypeEnum) !*DateTimePicker {
         return switch (t) {
             .DateTime => uiNewDateTimePicker(),
             .Date => uiNewDatePicker(),
@@ -1061,11 +1061,11 @@ pub const MultilineEntry = opaque {
     pub fn SetReadOnly(e: *MultilineEntry, readonly: bool) void {
         return uiMultilineEntrySetReadOnly(e, @intFromBool(readonly));
     }
-    pub const Type = enum {
+    pub const TypeEnum = enum {
         Wrapping,
         NonWrapping,
     };
-    pub fn New(t: Type) !*MultilineEntry {
+    pub fn New(t: TypeEnum) !*MultilineEntry {
         return switch (t) {
             .Wrapping => uiNewMultilineEntry(),
             .NonWrapping => uiNewNonWrappingMultilineEntry(),
@@ -1203,12 +1203,12 @@ pub const Area = opaque {
     };
     pub const KeyEvent = extern struct {
         Key: u8,
-        ExtKey: ExtKey,
+        ExtKey: ExtKeyEnum,
         Modifier: Modifiers,
         Modifiers: Modifiers,
         Up: c_int,
 
-        pub const ExtKey = enum(c_int) {
+        pub const ExtKeyEnum = enum(c_int) {
             Escape = 1,
             Insert = 2,
             Delete = 3,
@@ -1262,14 +1262,14 @@ pub const Area = opaque {
         pub extern fn uiNewArea(ah: *Area.Handler) ?*Area;
         pub extern fn uiNewScrollingArea(ah: *Area.Handler, width: c_int, height: c_int) ?*Area;
 
-        pub const Type = union(enum) {
+        pub const TypeEnum = union(enum) {
             Area,
             Scrolling: struct {
                 width: c_int,
                 height: c_int,
             },
         };
-        pub fn New(handler: *Handler, t: Type) !*Area {
+        pub fn New(handler: *Handler, t: TypeEnum) !*Area {
             return switch (t) {
                 .Area => uiNewArea(handler),
                 .Scrolling => |params| uiNewScrollingArea(handler, params.width, params.height),
@@ -1330,7 +1330,7 @@ pub const Draw = opaque {
     };
 
     pub const Brush = extern struct {
-        Type: Type,
+        Type: TypeEnum,
         R: f64,
         G: f64,
         B: f64,
@@ -1343,7 +1343,7 @@ pub const Draw = opaque {
         Stops: ?[*]GradientStop,
         NumStops: usize,
 
-        pub const Type = enum(c_int) {
+        pub const TypeEnum = enum(c_int) {
             Solid = 0,
             LinearGradient = 1,
             RadialGradient = 2,
@@ -1359,7 +1359,7 @@ pub const Draw = opaque {
         };
 
         pub const InitOptions = struct {
-            Type: Type = .Solid,
+            Type: TypeEnum = .Solid,
             R: f64 = 1,
             G: f64 = 1,
             B: f64 = 1,
@@ -1458,9 +1458,9 @@ pub const Draw = opaque {
             String: ?*AttributedString,
             DefaultFont: *FontDescriptor,
             Width: f64,
-            Align: Align,
+            Align: AlignEnum,
 
-            pub const Align = enum(c_int) {
+            pub const AlignEnum = enum(c_int) {
                 Left = 0,
                 Center = 1,
                 Right = 2,
@@ -1489,7 +1489,7 @@ pub const Draw = opaque {
 };
 
 pub const Attribute = opaque {
-    pub const Type = enum(c_int) {
+    pub const TypeEnum = enum(c_int) {
         Family = 0,
         Size = 1,
         Weight = 2,
@@ -1574,7 +1574,7 @@ pub const Attribute = opaque {
 
     pub const Free = uiFreeAttribute;
     pub const GetType = uiAttributeGetType;
-    const TypeOptions = union(Type) {
+    const TypeOptions = union(TypeEnum) {
         Family: [*:0]const u8,
         Size: f64,
         Weight: TextWeight,
