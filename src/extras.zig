@@ -33,7 +33,7 @@ pub const TableType = opaque {
 pub fn Table(comptime T: type) type {
     const info = @typeInfo(T);
     const struct_info = switch (info) {
-        .Struct => |s| s,
+        .@"struct" => |s| s,
         else => @compileError("Table requires a struct type to be passed"),
     };
     const num_columns = struct_info.fields.len;
@@ -291,7 +291,7 @@ pub fn Table(comptime T: type) type {
                             const value = @field(data, field.name);
                             // TODO: allow user to configure float precision
                             // TODO: allow user to configure int base
-                            const format_string = if (@typeInfo(t) == .Float) "{d:.2}" else "{any}";
+                            const format_string = if (@typeInfo(t) == .float) "{d:.2}" else "{any}";
                             const string = std.fmt.bufPrintZ(&buffer, format_string, .{value}) catch @panic("Formatting column " ++ field.name);
                             value_param = .{ .String = string };
                         },
@@ -364,7 +364,7 @@ pub fn Table(comptime T: type) type {
                             }
                         },
                         else => |t| {
-                            if (@typeInfo(t) == .Int) {
+                            if (@typeInfo(t) == .int) {
                                 std.debug.assert(value_t == .String);
                                 const string = std.mem.span(value.String());
                                 // TODO: allow API user to define base
@@ -373,7 +373,7 @@ pub fn Table(comptime T: type) type {
                                     error.InvalidCharacter => previous_value,
                                 };
                                 @field(data, field.name) = int_value;
-                            } else if (@typeInfo(t) == .Float) {
+                            } else if (@typeInfo(t) == .float) {
                                 std.debug.assert(value_t == .String);
                                 const string = std.mem.span(value.String());
                                 const float_value = std.fmt.parseFloat(t, string) catch |e| switch (e) {
