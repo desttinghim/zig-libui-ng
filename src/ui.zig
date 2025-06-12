@@ -594,7 +594,7 @@ pub const Entry = opaque {
     pub fn ReadOnly(e: *Entry) bool {
         return uiEntryReadOnly(e) == 1;
     }
-    pub fn SetReadOnly(e: *Entry, readonly: c_int) void {
+    pub fn SetReadOnly(e: *Entry, readonly: bool) void {
         return uiEntrySetReadOnly(e, @intFromBool(readonly));
     }
     pub const TypeEnum = enum {
