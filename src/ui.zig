@@ -594,7 +594,7 @@ pub const Entry = opaque {
     pub fn ReadOnly(e: *Entry) bool {
         return uiEntryReadOnly(e) == 1;
     }
-    pub fn SetReadOnly(e: *Entry, readonly: c_int) void {
+    pub fn SetReadOnly(e: *Entry, readonly: bool) void {
         return uiEntrySetReadOnly(e, @intFromBool(readonly));
     }
     pub const TypeEnum = enum {
@@ -685,7 +685,7 @@ pub const Group = opaque {
         return uiGroupMargined(g) == 1;
     }
     pub fn SetMargined(g: *Group, margined: bool) void {
-        uiGroupSetMargined(g, margined);
+        uiGroupSetMargined(g, @intFromBool(margined));
     }
     pub fn New(title: [*:0]const u8) !*Group {
         return uiNewGroup(title) orelse error.InitGroup;
@@ -780,8 +780,14 @@ pub const Slider = opaque {
         uiSliderOnReleased(self, callback, userdata);
     }
     pub const SetRange = uiSliderSetRange;
-    pub fn New(min: c_int, max: c_int) !*Slider {
-        return uiNewSlider(min, max) orelse error.InitSlider;
+
+    pub const TypeEnum = union(enum) {
+        Integer: struct { min: c_int, max: c_int },
+    };
+    pub fn New(t: TypeEnum) !*Slider {
+        return switch (t) {
+            .Integer => |int| uiNewSlider(int.min, int.max),
+        } orelse error.InitSlider;
     }
 };
 
