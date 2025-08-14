@@ -1802,11 +1802,12 @@ pub const Grid = opaque {
     pub fn as_control(self: *Self) *Control {
         return @ptrCast(@alignCast(self));
     }
-    pub const Align = enum(c_int) {
-        Fill = 0,
-        Start = 1,
-        Center = 2,
-        End = 3,
+
+    pub const Position = struct {
+        /// Placement as number of columns from the left. Integer in range of `[INT_MIN, INT_MAX]`.
+        left: c_int = 0,
+        /// Placement as number of rows from the top. Integer in range of `[INT_MIN, INT_MAX]`.
+        top: c_int = 0,
     };
 
     pub const At = enum(c_int) {
@@ -1818,6 +1819,30 @@ pub const Grid = opaque {
         Trailing = 2,
         /// Place below control
         Bottom = 3,
+    };
+
+    pub const Align = enum(c_int) {
+        Fill = 0,
+        Start = 1,
+        Center = 2,
+        End = 3,
+    };
+
+    pub const Sizing = struct {
+        /// Number of columns to span. Integer in range of `[0, INT_MAX]`.
+        /// Defaults to 1.
+        xspan: c_int = 1,
+        /// Number of rows to span. Integer in range of `[0, INT_MAX]`.
+        /// Defaults to 1.
+        yspan: c_int = 1,
+        /// `TRUE` to expand reserved area horizontally, `FALSE` otherwise.
+        hexpand: bool = false,
+        /// Horizontal alignment of the control within the reserved space.
+        halign: Grid.Align = .Center,
+        /// `TRUE` to expand reserved area vertically, `FALSE` otherwise.
+        vexpand: bool = false,
+        /// Vertical alignment of the control within the reserved space.
+        valign: Grid.Align = .Center,
     };
 
     pub extern fn uiGridAppend(g: *Grid, c: ?*Control, left: c_int, top: c_int, xspan: c_int, yspan: c_int, hexpand: c_int, halign: Grid.Align, vexpand: c_int, valign: Grid.Align) void;
@@ -1838,6 +1863,32 @@ pub const Grid = opaque {
         const new_grid = uiNewGrid();
         if (new_grid == null) return error.InitGrid;
         return new_grid.?;
+    }
+    pub fn append(g: *Grid, c: ?*Control, pos: Grid.Position, size: Grid.Sizing) void {
+        g.Append(
+            c,
+            pos.left,
+            pos.top,
+            size.xspan,
+            size.yspan,
+            @intFromBool(size.hexpand),
+            size.halign,
+            @intFromBool(size.vexpand),
+            size.valign,
+        );
+    }
+    pub fn insert_at(g: *Grid, c: ?*Control, existing: ?*Control, at: Grid.At, size: Grid.Sizing) void {
+        g.InsertAt(
+            c,
+            existing,
+            at,
+            size.xspan,
+            size.yspan,
+            @intFromBool(size.hexpand),
+            size.halign,
+            @intFromBool(size.vexpand),
+            size.valign,
+        );
     }
 };
 
