@@ -98,7 +98,7 @@ const CircleDrawer = struct {
         errdefer alloc.destroy(this);
         this.* = .{
             .alloc = alloc,
-            .actions = std.ArrayList(Action).init(alloc),
+            .actions = std.ArrayList(Action){},
             .circles = std.AutoArrayHashMap(usize, Circle).init(alloc),
             .handler = ui.Area.Handler{
                 .Draw = @This().Draw,
@@ -132,7 +132,7 @@ const CircleDrawer = struct {
             if (circle.is_filled) return; // don't duplicate fill actions
         }
         circle_drawer.beginAddAction();
-        try circle_drawer.actions.append(.{ .fill_circle = .{
+        try circle_drawer.actions.append(circle_drawer.alloc, .{ .fill_circle = .{
             .which = id,
         } });
         circle_drawer.action_current += 1;
@@ -141,7 +141,7 @@ const CircleDrawer = struct {
     fn addCircle(circle_drawer: *CircleDrawer, x: f64, y: f64, radius: f64) !void {
         circle_drawer.beginAddAction();
         const new_id = circle_drawer.action_current;
-        try circle_drawer.actions.append(.{ .add_circle = .{
+        try circle_drawer.actions.append(circle_drawer.alloc, .{ .add_circle = .{
             .id = new_id,
             .x = x,
             .y = y,
@@ -175,7 +175,7 @@ const CircleDrawer = struct {
     }
 
     pub fn Destroy(this: *@This()) void {
-        this.actions.deinit();
+        this.actions.deinit(this.alloc);
         this.circles.deinit();
         this.alloc.destroy(this);
     }
@@ -186,7 +186,7 @@ const CircleDrawer = struct {
         return new_area;
     }
 
-    fn Draw(handler: *ui.Area.Handler, area: *ui.Area, draw_params: *ui.Draw.Params) callconv(.C) void {
+    fn Draw(handler: *ui.Area.Handler, area: *ui.Area, draw_params: *ui.Draw.Params) callconv(.c) void {
         const this: *@This() = @fieldParentPtr("handler", handler);
         _ = area;
 
@@ -212,7 +212,7 @@ const CircleDrawer = struct {
         }
     }
 
-    fn MouseEvent(handler: *ui.Area.Handler, area: *ui.Area, mouse_event: *ui.Area.MouseEvent) callconv(.C) void {
+    fn MouseEvent(handler: *ui.Area.Handler, area: *ui.Area, mouse_event: *ui.Area.MouseEvent) callconv(.c) void {
         const this: *@This() = @fieldParentPtr("handler", handler);
 
         if (mouse_event.Down & 0b1 == 0) {
@@ -252,20 +252,20 @@ const CircleDrawer = struct {
         area.QueueRedrawAll();
     }
 
-    fn MouseCrossed(handler: *ui.Area.Handler, area: *ui.Area, cross_value: c_int) callconv(.C) void {
+    fn MouseCrossed(handler: *ui.Area.Handler, area: *ui.Area, cross_value: c_int) callconv(.c) void {
         _ = area;
         _ = cross_value;
         const this: *@This() = @fieldParentPtr("handler", handler);
         _ = this;
     }
 
-    fn DragBroken(handler: *ui.Area.Handler, area: *ui.Area) callconv(.C) void {
+    fn DragBroken(handler: *ui.Area.Handler, area: *ui.Area) callconv(.c) void {
         _ = area;
         const this: *@This() = @fieldParentPtr("handler", handler);
         _ = this;
     }
 
-    fn KeyEvent(handler: *ui.Area.Handler, area: *ui.Area, key_event: *ui.Area.KeyEvent) callconv(.C) c_int {
+    fn KeyEvent(handler: *ui.Area.Handler, area: *ui.Area, key_event: *ui.Area.KeyEvent) callconv(.c) c_int {
         const this: *@This() = @fieldParentPtr("handler", handler);
         if (key_event.Modifiers.Ctrl and key_event.Up == 0) {
             switch (key_event.Key) {

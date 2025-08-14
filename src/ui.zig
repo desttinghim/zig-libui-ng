@@ -72,7 +72,7 @@ pub fn OnError(context: ErrorContext, userdata: ?*anyopaque, err: anyerror) void
 /// Queue a function to be called in a loop by `ui.Main`.
 pub fn QueueMain(comptime T: type, comptime E: type, comptime callback: *const fn (?*T) E!void, data: ?*T) void {
     const cb = struct {
-        fn cb(t_opt: ?*anyopaque) callconv(.C) void {
+        fn cb(t_opt: ?*anyopaque) callconv(.c) void {
             @call(.auto, callback, .{@as(?*T, @ptrCast(@alignCast(t_opt)))}) catch |err| error_handler(.QueueMain, t_opt, err);
         }
     }.cb;
@@ -83,7 +83,7 @@ pub fn QueueMain(comptime T: type, comptime E: type, comptime callback: *const f
 /// time tracking.
 pub fn Timer(comptime T: type, comptime E: type, milliseconds: c_int, comptime callback: *const fn (?*T) E!TimerAction, data: ?*T) void {
     const cb = struct {
-        fn cb(t_opt: ?*anyopaque) callconv(.C) TimerAction {
+        fn cb(t_opt: ?*anyopaque) callconv(.c) TimerAction {
             return @call(.auto, callback, .{@as(?*T, @ptrCast(@alignCast(t_opt)))}) catch |err| {
                 error_handler(.Timer, t_opt, err);
                 return TimerAction.disarm;
@@ -100,7 +100,7 @@ pub fn Timer(comptime T: type, comptime E: type, milliseconds: c_int, comptime c
 /// if they want to save their work before exiting.
 pub fn OnShouldQuit(comptime T: type, comptime E: type, comptime callback: *const fn (?*T) E!QuitAction, data: ?*T) void {
     const cb = struct {
-        fn cb(t_opt: ?*anyopaque) callconv(.C) QuitAction {
+        fn cb(t_opt: ?*anyopaque) callconv(.c) QuitAction {
             return @call(.auto, callback, .{@as(?*T, @ptrCast(@alignCast(t_opt)))}) catch |err| {
                 error_handler(.OnShouldQuit, t_opt, err);
                 return .should_quit;
@@ -172,26 +172,26 @@ pub extern fn uiMain() void;
 pub extern fn uiMainSteps() void;
 pub extern fn uiMainStep(wait: MainStepWait) MainStepStatus;
 pub extern fn uiQuit() void;
-pub extern fn uiQueueMain(f: ?*const fn (?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
-pub extern fn uiTimer(milliseconds: c_int, f: ?*const fn (?*anyopaque) callconv(.C) TimerAction, data: ?*anyopaque) void;
-pub extern fn uiOnShouldQuit(f: ?*const fn (?*anyopaque) callconv(.C) QuitAction, data: ?*anyopaque) void;
+pub extern fn uiQueueMain(f: ?*const fn (?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
+pub extern fn uiTimer(milliseconds: c_int, f: ?*const fn (?*anyopaque) callconv(.c) TimerAction, data: ?*anyopaque) void;
+pub extern fn uiOnShouldQuit(f: ?*const fn (?*anyopaque) callconv(.c) QuitAction, data: ?*anyopaque) void;
 pub extern fn uiFreeText(text: [*:0]const u8) void;
 
 pub const Control = extern struct {
     Signature: u32,
     OSSignature: u32,
     TypeSignature: u32,
-    _Destroy: ?*const fn (*Control) callconv(.C) void,
-    _Handle: ?*const fn (*Control) callconv(.C) usize,
-    _Parent: ?*const fn (*Control) callconv(.C) *Control,
-    _SetParent: ?*const fn (*Control, *Control) callconv(.C) void,
-    _Toplevel: ?*const fn (*Control) callconv(.C) c_int,
-    _Visible: ?*const fn (*Control) callconv(.C) c_int,
-    _Show: ?*const fn (*Control) callconv(.C) void,
-    _Hide: ?*const fn (*Control) callconv(.C) void,
-    _Enabled: ?*const fn (*Control) callconv(.C) c_int,
-    _Enable: ?*const fn (*Control) callconv(.C) void,
-    _Disable: ?*const fn (*Control) callconv(.C) void,
+    _Destroy: ?*const fn (*Control) callconv(.c) void,
+    _Handle: ?*const fn (*Control) callconv(.c) usize,
+    _Parent: ?*const fn (*Control) callconv(.c) *Control,
+    _SetParent: ?*const fn (*Control, *Control) callconv(.c) void,
+    _Toplevel: ?*const fn (*Control) callconv(.c) c_int,
+    _Visible: ?*const fn (*Control) callconv(.c) c_int,
+    _Show: ?*const fn (*Control) callconv(.c) void,
+    _Hide: ?*const fn (*Control) callconv(.c) void,
+    _Enabled: ?*const fn (*Control) callconv(.c) c_int,
+    _Enable: ?*const fn (*Control) callconv(.c) void,
+    _Disable: ?*const fn (*Control) callconv(.c) void,
 
     pub extern fn uiControlDestroy(c: *Control) void;
     pub extern fn uiControlHandle(c: *Control) usize;
@@ -250,14 +250,14 @@ pub const Window = opaque {
     pub extern fn uiWindowSetTitle(w: *Window, title: [*:0]const u8) void;
     pub extern fn uiWindowPosition(w: *Window, x: *c_int, y: *c_int) void;
     pub extern fn uiWindowSetPosition(w: *Window, x: c_int, y: c_int) void;
-    pub extern fn uiWindowOnPositionChanged(w: *Window, f: ?*const fn (*Window, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiWindowOnPositionChanged(w: *Window, f: ?*const fn (*Window, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiWindowContentSize(w: *Window, width: *c_int, height: *c_int) void;
     pub extern fn uiWindowSetContentSize(w: *Window, width: c_int, height: c_int) void;
     pub extern fn uiWindowFullscreen(w: *Window) c_int;
     pub extern fn uiWindowSetFullscreen(w: *Window, fullscreen: c_int) void;
-    pub extern fn uiWindowOnContentSizeChanged(w: *Window, f: ?*const fn (*Window, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
-    pub extern fn uiWindowOnClosing(w: *Window, f: ?*const fn (*Window, ?*anyopaque) callconv(.C) Window.ClosingAction, data: ?*anyopaque) void;
-    pub extern fn uiWindowOnFocusChanged(w: *Window, f: ?*const fn (*Window, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiWindowOnContentSizeChanged(w: *Window, f: ?*const fn (*Window, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
+    pub extern fn uiWindowOnClosing(w: *Window, f: ?*const fn (*Window, ?*anyopaque) callconv(.c) Window.ClosingAction, data: ?*anyopaque) void;
+    pub extern fn uiWindowOnFocusChanged(w: *Window, f: ?*const fn (*Window, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiWindowFocused(w: *Window) c_int;
     pub extern fn uiWindowBorderless(w: *Window) c_int;
     pub extern fn uiWindowSetBorderless(w: *Window, borderless: c_int) void;
@@ -355,7 +355,7 @@ pub const Window = opaque {
     /// Call this function to have `f` called when the Window's position has changed.
     pub fn OnPositionChanged(window: *Window, comptime T: type, comptime E: type, comptime f: *const fn (*Window, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(window_opt: ?*Window, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(window_opt: ?*Window, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .WindowOnPositionChanged = window_opt };
                 const w = window_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(w, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -373,7 +373,7 @@ pub const Window = opaque {
     /// Call this function to have `f` called when the Window has been resized.
     pub fn OnContentSizeChanged(window: *Window, comptime T: type, comptime E: type, comptime f: *const fn (*Window, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(window_opt: ?*Window, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(window_opt: ?*Window, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .WindowOnContentSizeChanged = window_opt };
                 const w = window_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(w, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -399,7 +399,7 @@ pub const Window = opaque {
     /// good place to handle it.
     pub fn OnClosing(window: *Window, comptime T: type, comptime E: type, comptime f: *const fn (*Window, ?*T) E!ClosingAction, userdata: ?*T) void {
         const callback = struct {
-            fn callback(window_opt: ?*Window, t_opt: ?*anyopaque) callconv(.C) ClosingAction {
+            fn callback(window_opt: ?*Window, t_opt: ?*anyopaque) callconv(.c) ClosingAction {
                 const err_ctx = ErrorContext{ .WindowOnClosing = window_opt };
                 const w = window_opt orelse {
                     error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
@@ -416,7 +416,7 @@ pub const Window = opaque {
 
     pub fn OnFocusChanged(window: *Window, comptime T: type, comptime f: *const fn (*Window, ?*T) void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(window_opt: ?*Window, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(window_opt: ?*Window, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .WindowOnFocusChanged = window_opt };
                 const w = window_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(w, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -453,7 +453,7 @@ pub const Button = opaque {
 
     pub extern fn uiButtonText(b: *Button) [*:0]const u8;
     pub extern fn uiButtonSetText(b: *Button, text: [*:0]const u8) void;
-    pub extern fn uiButtonOnClicked(b: *Button, f: ?*const fn (*Button, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiButtonOnClicked(b: *Button, f: ?*const fn (*Button, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiNewButton(text: [*:0]const u8) ?*Button;
 
     pub const Text = uiButtonText;
@@ -461,7 +461,7 @@ pub const Button = opaque {
 
     pub fn OnClicked(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(button_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(button_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .ButtonOnClicked = button_opt };
                 const b = button_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(b, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -528,7 +528,7 @@ pub const Checkbox = opaque {
 
     pub extern fn uiCheckboxText(c: *Checkbox) [*:0]u8;
     pub extern fn uiCheckboxSetText(c: *Checkbox, text: [*:0]const u8) void;
-    pub extern fn uiCheckboxOnToggled(c: *Checkbox, f: ?*const fn (*Checkbox, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiCheckboxOnToggled(c: *Checkbox, f: ?*const fn (*Checkbox, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiCheckboxChecked(c: *Checkbox) c_int;
     pub extern fn uiCheckboxSetChecked(c: *Checkbox, checked: c_int) void;
     pub extern fn uiNewCheckbox(text: [*:0]const u8) ?*Checkbox;
@@ -538,7 +538,7 @@ pub const Checkbox = opaque {
 
     pub fn OnToggled(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .CheckboxOnToggled = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -571,7 +571,7 @@ pub const Entry = opaque {
 
     pub extern fn uiEntryText(e: *Entry) [*:0]u8;
     pub extern fn uiEntrySetText(e: *Entry, text: [*:0]const u8) void;
-    pub extern fn uiEntryOnChanged(e: *Entry, f: ?*const fn (*Entry, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiEntryOnChanged(e: *Entry, f: ?*const fn (*Entry, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiEntryReadOnly(e: *Entry) c_int;
     pub extern fn uiEntrySetReadOnly(e: *Entry, readonly: c_int) void;
     pub extern fn uiNewEntry() ?*Entry;
@@ -582,7 +582,7 @@ pub const Entry = opaque {
     pub const SetText = uiEntrySetText;
     pub fn OnChanged(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .EntryOnChanged = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -705,7 +705,7 @@ pub const Spinbox = opaque {
     pub extern fn uiSpinboxSetValue(s: *Spinbox, value: c_int) void;
     pub extern fn uiSpinboxSetValueDouble(s: *Spinbox, value: f64) void;
     pub extern fn uiSpinboxValueText(s: *Spinbox) [*:0]const u8;
-    pub extern fn uiSpinboxOnChanged(s: *Spinbox, f: ?*const fn (?*Spinbox, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiSpinboxOnChanged(s: *Spinbox, f: ?*const fn (?*Spinbox, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiNewSpinbox(min: c_int, max: c_int) ?*Spinbox;
     pub extern fn uiNewSpinboxDouble(min: f64, max: f64, precision: c_int) ?*Spinbox;
 
@@ -717,7 +717,7 @@ pub const Spinbox = opaque {
 
     pub fn OnChanged(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .SpinboxOnChanged = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -749,8 +749,8 @@ pub const Slider = opaque {
     pub extern fn uiSliderSetValue(s: *Slider, value: c_int) void;
     pub extern fn uiSliderHasToolTip(s: *Slider) c_int;
     pub extern fn uiSliderSetHasToolTip(s: *Slider, hasToolTip: c_int) void;
-    pub extern fn uiSliderOnChanged(s: *Slider, f: ?*const fn (*Slider, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
-    pub extern fn uiSliderOnReleased(s: *Slider, f: ?*const fn (*Slider, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiSliderOnChanged(s: *Slider, f: ?*const fn (*Slider, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
+    pub extern fn uiSliderOnReleased(s: *Slider, f: ?*const fn (*Slider, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiSliderSetRange(s: *Slider, min: c_int, max: c_int) void;
     pub extern fn uiNewSlider(min: c_int, max: c_int) ?*Slider;
 
@@ -764,7 +764,7 @@ pub const Slider = opaque {
     }
     pub fn OnChanged(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .SliderOnChanged = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -774,7 +774,7 @@ pub const Slider = opaque {
     }
     pub fn OnReleased(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .SliderOnReleased = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -843,7 +843,7 @@ pub const Combobox = opaque {
     pub extern fn uiComboboxNumItems(c: *Combobox) c_int;
     pub extern fn uiComboboxSelected(c: *Combobox) c_int;
     pub extern fn uiComboboxSetSelected(c: *Combobox, index: c_int) void;
-    pub extern fn uiComboboxOnSelected(c: *Combobox, f: ?*const fn (?*Combobox, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiComboboxOnSelected(c: *Combobox, f: ?*const fn (?*Combobox, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiNewCombobox() ?*Combobox;
 
     pub const Append = uiComboboxAppend;
@@ -855,7 +855,7 @@ pub const Combobox = opaque {
     pub const SetSelected = uiComboboxSetSelected;
     pub fn OnSelected(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .ComboboxOnSelected = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -879,7 +879,7 @@ pub const EditableCombobox = opaque {
     pub extern fn uiEditableComboboxAppend(c: *EditableCombobox, text: [*:0]const u8) void;
     pub extern fn uiEditableComboboxText(c: *EditableCombobox) [*:0]const u8;
     pub extern fn uiEditableComboboxSetText(c: *EditableCombobox, text: [*:0]const u8) void;
-    pub extern fn uiEditableComboboxOnChanged(c: *EditableCombobox, f: ?*const fn (?*EditableCombobox, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiEditableComboboxOnChanged(c: *EditableCombobox, f: ?*const fn (?*EditableCombobox, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiNewEditableCombobox() ?*EditableCombobox;
 
     pub const Append = uiEditableComboboxAppend;
@@ -887,7 +887,7 @@ pub const EditableCombobox = opaque {
     pub const SetText = uiEditableComboboxSetText;
     pub fn OnChanged(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .EditableComboboxOnChanged = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -912,7 +912,7 @@ pub const RadioButtons = opaque {
     pub extern fn uiRadioButtonsAppend(r: *RadioButtons, text: [*:0]const u8) void;
     pub extern fn uiRadioButtonsSelected(r: *RadioButtons) c_int;
     pub extern fn uiRadioButtonsSetSelected(r: *RadioButtons, index: c_int) void;
-    pub extern fn uiRadioButtonsOnSelected(r: *RadioButtons, f: ?*const fn (?*RadioButtons, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiRadioButtonsOnSelected(r: *RadioButtons, f: ?*const fn (?*RadioButtons, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiNewRadioButtons() ?*RadioButtons;
 
     pub const Append = uiRadioButtonsAppend;
@@ -920,7 +920,7 @@ pub const RadioButtons = opaque {
     pub const SetSelected = uiRadioButtonsSetSelected;
     pub fn OnSelected(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .RadioButtonsOnSelected = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -990,7 +990,7 @@ pub const DateTimePicker = opaque {
 
     pub extern fn uiDateTimePickerTime(d: *DateTimePicker, time: *struct_tm) void;
     pub extern fn uiDateTimePickerSetTime(d: *DateTimePicker, time: *const struct_tm) void;
-    pub extern fn uiDateTimePickerOnChanged(d: *DateTimePicker, f: ?*const fn (?*DateTimePicker, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiDateTimePickerOnChanged(d: *DateTimePicker, f: ?*const fn (?*DateTimePicker, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiNewDateTimePicker() ?*DateTimePicker;
     pub extern fn uiNewDatePicker() ?*DateTimePicker;
     pub extern fn uiNewTimePicker() ?*DateTimePicker;
@@ -1004,7 +1004,7 @@ pub const DateTimePicker = opaque {
     pub const SetTime = uiDateTimePickerSetTime;
     pub fn OnChanged(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .DateTimePickerOnChanged = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -1036,7 +1036,7 @@ pub const MultilineEntry = opaque {
     pub extern fn uiMultilineEntryText(e: *MultilineEntry) [*:0]const u8;
     pub extern fn uiMultilineEntrySetText(e: *MultilineEntry, text: [*:0]const u8) void;
     pub extern fn uiMultilineEntryAppend(e: *MultilineEntry, text: [*:0]const u8) void;
-    pub extern fn uiMultilineEntryOnChanged(e: *MultilineEntry, f: ?*const fn (?*MultilineEntry, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiMultilineEntryOnChanged(e: *MultilineEntry, f: ?*const fn (?*MultilineEntry, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiMultilineEntryReadOnly(e: *MultilineEntry) c_int;
     pub extern fn uiMultilineEntrySetReadOnly(e: *MultilineEntry, readonly: c_int) void;
     pub extern fn uiNewMultilineEntry() ?*MultilineEntry;
@@ -1047,7 +1047,7 @@ pub const MultilineEntry = opaque {
     pub const Append = uiMultilineEntryAppend;
     pub fn OnChanged(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .MultilineEntryOnChanged = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -1078,7 +1078,7 @@ pub const MultilineEntry = opaque {
 pub const MenuItem = opaque {
     pub extern fn uiMenuItemEnable(m: *MenuItem) void;
     pub extern fn uiMenuItemDisable(m: *MenuItem) void;
-    pub extern fn uiMenuItemOnClicked(m: *MenuItem, f: ?*const fn (?*MenuItem, ?*Window, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiMenuItemOnClicked(m: *MenuItem, f: ?*const fn (?*MenuItem, ?*Window, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiMenuItemChecked(m: *MenuItem) c_int;
     pub extern fn uiMenuItemSetChecked(m: *MenuItem, checked: c_int) void;
 
@@ -1087,7 +1087,7 @@ pub const MenuItem = opaque {
     pub const Self = @This();
     pub fn OnClicked(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, *Window, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, window_opt: ?*Window, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, window_opt: ?*Window, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .MenuItemOnClicked = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 const w = window_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
@@ -1253,11 +1253,11 @@ pub const Area = opaque {
     };
 
     pub const Handler = extern struct {
-        Draw: *const fn (*Handler, *Area, *Draw.Params) callconv(.C) void,
-        MouseEvent: *const fn (*Handler, *Area, *MouseEvent) callconv(.C) void,
-        MouseCrossed: *const fn (*Handler, *Area, c_int) callconv(.C) void,
-        DragBroken: *const fn (*Handler, *Area) callconv(.C) void,
-        KeyEvent: *const fn (*Handler, *Area, *KeyEvent) callconv(.C) c_int,
+        Draw: *const fn (*Handler, *Area, *Draw.Params) callconv(.c) void,
+        MouseEvent: *const fn (*Handler, *Area, *MouseEvent) callconv(.c) void,
+        MouseCrossed: *const fn (*Handler, *Area, c_int) callconv(.c) void,
+        DragBroken: *const fn (*Handler, *Area) callconv(.c) void,
+        KeyEvent: *const fn (*Handler, *Area, *KeyEvent) callconv(.c) c_int,
 
         pub extern fn uiNewArea(ah: *Area.Handler) ?*Area;
         pub extern fn uiNewScrollingArea(ah: *Area.Handler, width: c_int, height: c_int) ?*Area;
@@ -1612,7 +1612,7 @@ pub const Attribute = opaque {
 };
 
 pub const OpenTypeFeatures = opaque {
-    pub const ForEachFunc = *const fn (*const OpenTypeFeatures, u8, u8, u8, u8, u32, ?*anyopaque) callconv(.C) ui.ForEach;
+    pub const ForEachFunc = *const fn (*const OpenTypeFeatures, u8, u8, u8, u8, u32, ?*anyopaque) callconv(.c) ui.ForEach;
     pub fn New() !*OpenTypeFeatures {
         return uiNewOpenTypeFeatures() orelse error.InitOpenTypeFeatures;
     }
@@ -1639,7 +1639,7 @@ pub const OpenTypeFeatures = opaque {
 
 /// AttributedString is a control that allows for complex text rendering.
 pub const AttributedString = opaque {
-    pub const ForEachAttributeFunc = *const fn (*const AttributedString, *const Attribute, usize, usize, ?*anyopaque) callconv(.C) ui.ForEach;
+    pub const ForEachAttributeFunc = *const fn (*const AttributedString, *const Attribute, usize, usize, ?*anyopaque) callconv(.c) ui.ForEach;
     pub fn New(initialString: [*:0]const u8) !*AttributedString {
         return uiNewAttributedString(initialString) orelse error.InitAttributedString;
     }
@@ -1691,14 +1691,14 @@ pub const FontButton = opaque {
     }
 
     pub extern fn uiFontButtonFont(b: *FontButton, desc: *FontDescriptor) void;
-    pub extern fn uiFontButtonOnChanged(b: *FontButton, comptime f: ?*const fn (?*FontButton, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiFontButtonOnChanged(b: *FontButton, comptime f: ?*const fn (?*FontButton, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiNewFontButton() ?*FontButton;
     pub extern fn uiFreeFontButtonFont(desc: *FontDescriptor) void;
 
     pub const Font = uiFontButtonFont;
     pub fn OnChanged(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .FontButtonOnChanged = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -1728,7 +1728,7 @@ pub const ColorButton = opaque {
 
     pub extern fn uiColorButtonColor(b: *ColorButton, r: *f64, g: *f64, bl: *f64, a: *f64) void;
     pub extern fn uiColorButtonSetColor(b: *ColorButton, r: f64, g: f64, bl: f64, a: f64) void;
-    pub extern fn uiColorButtonOnChanged(b: *ColorButton, f: ?*const fn (?*ColorButton, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiColorButtonOnChanged(b: *ColorButton, f: ?*const fn (?*ColorButton, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiNewColorButton() ?*ColorButton;
 
     pub fn Color(cb: *const ColorButton) ColorValue {
@@ -1752,7 +1752,7 @@ pub const ColorButton = opaque {
     }
     pub fn OnChanged(self: *Self, comptime T: type, comptime E: type, f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .ColorButtonOnChanged = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -1969,11 +1969,11 @@ pub const Table = opaque {
     };
     pub const Model = opaque {
         pub const Handler = extern struct {
-            NumColumns: *const fn (*Handler, *Model) callconv(.C) c_int,
-            ColumnType: *const fn (*Handler, *Model, c_int) callconv(.C) Value.Type,
-            NumRows: *const fn (*Handler, *Model) callconv(.C) c_int,
-            CellValue: *const fn (*Handler, *Model, c_int, c_int) callconv(.C) ?*Value,
-            SetCellValue: *const fn (*Handler, *Model, c_int, c_int, ?*const Value) callconv(.C) void,
+            NumColumns: *const fn (*Handler, *Model) callconv(.c) c_int,
+            ColumnType: *const fn (*Handler, *Model, c_int) callconv(.c) Value.Type,
+            NumRows: *const fn (*Handler, *Model) callconv(.c) c_int,
+            CellValue: *const fn (*Handler, *Model, c_int, c_int) callconv(.c) ?*Value,
+            SetCellValue: *const fn (*Handler, *Model, c_int, c_int, ?*const Value) callconv(.c) void,
         };
 
         pub extern fn uiNewTableModel(mh: *Table.Model.Handler) ?*Table.Model;
@@ -2073,17 +2073,17 @@ pub const Table = opaque {
     pub extern fn uiTableHeaderVisible(t: *Table) c_int;
     pub extern fn uiTableHeaderSetVisible(t: *Table, visible: c_int) void;
     pub extern fn uiNewTable(params: *Table.Params) ?*Table;
-    pub extern fn uiTableOnRowClicked(t: *Table, f: ?*const fn (?*Table, c_int, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
-    pub extern fn uiTableOnRowDoubleClicked(t: *Table, f: ?*const fn (?*Table, c_int, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiTableOnRowClicked(t: *Table, f: ?*const fn (?*Table, c_int, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
+    pub extern fn uiTableOnRowDoubleClicked(t: *Table, f: ?*const fn (?*Table, c_int, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiTableHeaderSetSortIndicator(t: *Table, column: c_int, indicator: Table.Value.SortIndicator) void;
     pub extern fn uiTableHeaderSortIndicator(t: *Table, column: c_int) Table.Value.SortIndicator;
-    pub extern fn uiTableHeaderOnClicked(t: *Table, f: ?*const fn (?*Table, c_int, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiTableHeaderOnClicked(t: *Table, f: ?*const fn (?*Table, c_int, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
     pub extern fn uiTableColumnWidth(t: *Table, column: c_int) c_int;
     pub extern fn uiTableColumnSetWidth(t: *Table, column: c_int, width: c_int) void;
 
     pub fn OnRowClicked(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .TableOnRowClicked = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -2093,7 +2093,7 @@ pub const Table = opaque {
     }
     pub fn OnRowDoubleClicked(self: *Self, comptime T: type, comptime E: type, f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .TableOnRowDoubleClicked = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -2116,7 +2116,7 @@ pub const Table = opaque {
 
     pub extern fn uiTableGetSelectionMode(t: *Table) Table.SelectionMode;
     pub extern fn uiTableSetSelectionMode(t: *Table, mode: Table.SelectionMode) void;
-    pub extern fn uiTableOnSelectionChanged(t: *Table, f: ?*const fn (?*Table, ?*anyopaque) callconv(.C) void, data: ?*anyopaque) void;
+    pub extern fn uiTableOnSelectionChanged(t: *Table, f: ?*const fn (?*Table, ?*anyopaque) callconv(.c) void, data: ?*anyopaque) void;
 
     pub extern fn uiTableGetSelection(t: *Table) ?*Table.Selection;
     pub extern fn uiTableSetSelection(t: *Table, sel: *Table.Selection) void;
@@ -2126,7 +2126,7 @@ pub const Table = opaque {
     pub const SetSelectionMode = uiTableSetSelectionMode;
     pub fn OnSelectionChanged(self: *Self, comptime T: type, comptime E: type, comptime f: *const fn (*Self, ?*T) E!void, userdata: ?*T) void {
         const callback = struct {
-            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.C) void {
+            fn callback(self_opt: ?*Self, t_opt: ?*anyopaque) callconv(.c) void {
                 const err_ctx = ErrorContext{ .TableOnSelectionChanged = self_opt };
                 const s = self_opt orelse return error_handler(err_ctx, t_opt, error.LibUIPassedNullPointer);
                 f(s, @as(?*T, @ptrCast(@alignCast(t_opt)))) catch |err| error_handler(err_ctx, t_opt, err);
@@ -2137,7 +2137,7 @@ pub const Table = opaque {
 
     pub const Selection = extern struct {
         NumRows: c_int,
-        Rows: *c_int,
+        Rows: [*]c_int,
     };
 
     pub const GetSelection = uiTableGetSelection;

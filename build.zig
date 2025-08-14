@@ -26,11 +26,16 @@ pub fn build(b: *std.Build) !void {
     const is_dynamic = false;
 
     inline for (examples, uses_extras) |example_name, use_extras| {
-        const exe = b.addExecutable(.{
-            .name = example_name,
+        const module = b.createModule(.{
             .root_source_file = b.path("examples/" ++ example_name ++ ".zig"),
             .target = target,
             .optimize = optimize,
+        });
+        module.addImport("ui", ui_module);
+
+        const exe = b.addExecutable(.{
+            .name = example_name,
+            .root_module = module,
             .win32_manifest = b.path(
                 if (is_dynamic)
                     "examples/example.manifest"
@@ -38,7 +43,7 @@ pub fn build(b: *std.Build) !void {
                     "examples/example.static.manifest",
             ),
         });
-        exe.root_module.addImport("ui", ui_module);
+
         if (use_extras) exe.root_module.addImport("ui-extras", ui_extras_module);
         exe.subsystem = std.Target.SubSystem.Windows;
 

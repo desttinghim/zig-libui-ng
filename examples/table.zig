@@ -52,12 +52,12 @@ pub fn main() !void {
 
     // ----
     // Initialize the `extras.Table(TestStruct)` and pass it an ArrayList
-    var data = std.ArrayList(TestStruct).init(gpa.allocator());
-    defer data.deinit();
+    var data = std.ArrayList(TestStruct){};
+    defer data.deinit(gpa.allocator());
 
     const hello = try string_allocator.dupeZ(u8, "Hello");
     const world = try string_allocator.dupeZ(u8, "World");
-    try data.appendSlice(&.{
+    try data.appendSlice(gpa.allocator(), &.{
         .{ .field_1 = 1, .field_2 = hello, .field_3 = .{ .data = 0 }, .field_4 = .{ .data = 0 } },
         .{ .field_1 = 2, .field_2 = world, .field_3 = .{ .data = 1 }, .field_4 = .{ .data = 50 } },
     });
