@@ -66,6 +66,7 @@ const examples = &[_][]const u8{
     "menu",
     "crud",
     "circle-drawer",
+    "grid",
 };
 
 const uses_extras = &[_]bool{
@@ -76,6 +77,7 @@ const uses_extras = &[_]bool{
     false,
     false,
     true,
+    false,
     false,
     false,
     false,
