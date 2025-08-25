@@ -1327,13 +1327,19 @@ pub const Draw = opaque {
         pub const New = uiDrawNewPath;
         pub const Free = uiDrawFreePath;
         pub const NewFigure = uiDrawPathNewFigure;
-        pub const NewFigureWithArc = uiDrawPathNewFigureWithArc;
+        pub fn NewFigureWithArc(p: *Draw.Path, xCenter: f64, yCenter: f64, radius: f64, startAngle: f64, sweep: f64, negative: bool) void {
+            uiDrawPathNewFigureWithArc(p, xCenter, yCenter, radius, startAngle, sweep, @intFromBool(negative));
+        }
         pub const LineTo = uiDrawPathLineTo;
-        pub const ArcTo = uiDrawPathArcTo;
+        pub fn ArcTo(p: *Draw.Path, xCenter: f64, yCenter: f64, radius: f64, startAngle: f64, sweep: f64, negative: bool) void {
+            uiDrawPathArcTo(p, xCenter, yCenter, radius, startAngle, sweep, @intFromBool(negative));
+        }
         pub const BezierTo = uiDrawPathBezierTo;
         pub const CloseFigure = uiDrawPathCloseFigure;
         pub const AddRectangle = uiDrawPathAddRectangle;
-        pub const Ended = uiDrawPathEnded;
+        pub fn Ended(p: *Draw.Path) bool {
+            return uiDrawPathEnded(p) != 0;
+        }
         pub const End = uiDrawPathEnd;
     };
 
