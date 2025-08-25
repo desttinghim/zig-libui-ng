@@ -1283,10 +1283,18 @@ pub const Draw = opaque {
         pub extern fn uiDrawStroke(c: *Draw.Context, path: *Draw.Path, b: *Draw.Brush, p: *Draw.StrokeParams) void;
         pub extern fn uiDrawFill(c: *Draw.Context, path: *Draw.Path, b: *Draw.Brush) void;
         pub extern fn uiDrawText(c: *Draw.Context, tl: *Draw.TextLayout, x: f64, y: f64) void;
+        pub extern fn uiDrawTransform(c: *Draw.Context, m: *ui.Draw.Matrix) void;
+        pub extern fn uiDrawClip(c: *Draw.Context, m: *ui.Draw.Matrix) void;
+        pub extern fn uiDrawSave(c: *Draw.Context) void;
+        pub extern fn uiDrawRestore(c: *Draw.Context) void;
 
         pub const Stroke = uiDrawStroke;
         pub const Fill = uiDrawFill;
         pub const Text = uiDrawText;
+        pub const Transform = uiDrawTransform;
+        pub const Clip = uiDrawClip;
+        pub const Save = uiDrawSave;
+        pub const Restore = uiDrawRestore;
     };
     pub const Params = extern struct {
         Context: ?*Context,
@@ -1434,12 +1442,12 @@ pub const Draw = opaque {
     };
 
     pub const Matrix = extern struct {
-        M11: f64,
-        M12: f64,
-        M21: f64,
-        M22: f64,
-        M31: f64,
-        M32: f64,
+        M11: f64 = 0,
+        M12: f64 = 0,
+        M21: f64 = 0,
+        M22: f64 = 0,
+        M31: f64 = 0,
+        M32: f64 = 0,
 
         pub extern fn uiDrawMatrixSetIdentity(m: *Area.Draw.Matrix) void;
         pub extern fn uiDrawMatrixTranslate(m: *Area.Draw.Matrix, x: f64, y: f64) void;
@@ -1451,6 +1459,23 @@ pub const Draw = opaque {
         pub extern fn uiDrawMatrixInvert(m: *Area.Draw.Matrix) c_int;
         pub extern fn uiDrawMatrixTransformPoint(m: *Area.Draw.Matrix, x: *f64, y: *f64) void;
         pub extern fn uiDrawMatrixTransformSize(m: *Area.Draw.Matrix, x: *f64, y: *f64) void;
+
+        pub const SetIdentity = uiDrawMatrixSetIdentity;
+        pub const Translate = uiDrawMatrixTranslate;
+        pub const Scale = uiDrawMatrixScale;
+        pub const Rotate = uiDrawMatrixRotate;
+        pub const Skew = uiDrawMatrixSkew;
+        pub const Multiply = uiDrawMatrixMultiply;
+        pub const Invertible = uiDrawMatrixInvertible;
+        pub const Invert = uiDrawMatrixInvert;
+        pub const TransformPoint = uiDrawMatrixTransformPoint;
+        pub const TransformSize = uiDrawMatrixTransformSize;
+
+        pub fn init() @This() {
+            var this = @This(){};
+            this.SetIdentity();
+            return this;
+        }
     };
 
     pub const TextLayout = opaque {
