@@ -222,19 +222,19 @@ pub const Control = extern struct {
     pub const VerifySetParent = uiControlVerifySetParent;
 
     pub fn Toplevel(c: *Control) bool {
-        return uiControlToplevel(c) == 1;
+        return uiControlToplevel(c) != 0;
     }
     pub fn Visible(c: *Control) bool {
-        return uiControlVisible(c) == 1;
+        return uiControlVisible(c) != 0;
     }
     pub fn Enabled(c: *Control) bool {
-        return uiControlEnabled(c) == 1;
+        return uiControlEnabled(c) != 0;
     }
     pub fn Alloc(n: usize, OSsig: u32, typesig: u32, typenamestr: [*:0]const u8) ?[*]Control {
         return uiAllocControl(n, OSsig, typesig, typenamestr);
     }
     pub fn EnabledToUser(c: *Control) bool {
-        return uiControlEnabledToUser(c) == 1;
+        return uiControlEnabledToUser(c) != 0;
     }
 };
 
@@ -301,7 +301,7 @@ pub const Window = opaque {
     }
 
     pub fn Fullscreen(w: *Window) bool {
-        return uiWindowFullscreen(w) == 1;
+        return uiWindowFullscreen(w) != 0;
     }
 
     pub fn SetFullscreen(w: *Window, fullscreen: bool) void {
@@ -309,11 +309,11 @@ pub const Window = opaque {
     }
 
     pub fn Focused(w: *Window) bool {
-        return uiWindowFocused(w) == 1;
+        return uiWindowFocused(w) != 0;
     }
 
     pub fn Borderless(w: *Window) bool {
-        return uiWindowBorderless(w) == 1;
+        return uiWindowBorderless(w) != 0;
     }
 
     pub fn SetBorderless(w: *Window, borderless: bool) void {
@@ -321,7 +321,7 @@ pub const Window = opaque {
     }
 
     pub fn Margined(w: *Window) bool {
-        uiWindowMargined(w) == 1;
+        uiWindowMargined(w) != 0;
     }
 
     pub fn SetMargined(w: *Window, margined: bool) void {
@@ -498,7 +498,7 @@ pub const Box = opaque {
     pub const Delete = uiBoxDelete;
 
     pub fn Padded(b: *Box) bool {
-        return uiBoxPadded(b) == 1;
+        return uiBoxPadded(b) != 0;
     }
 
     pub fn SetPadded(b: *Box, padded: bool) void {
@@ -548,7 +548,7 @@ pub const Checkbox = opaque {
     }
 
     pub fn Checked(c: *Checkbox) bool {
-        return uiCheckboxChecked(c) == 1;
+        return uiCheckboxChecked(c) != 0;
     }
     pub fn SetChecked(c: *Checkbox, checked: bool) void {
         uiCheckboxSetChecked(c, @intFromBool(checked));
@@ -592,7 +592,7 @@ pub const Entry = opaque {
     }
 
     pub fn ReadOnly(e: *Entry) bool {
-        return uiEntryReadOnly(e) == 1;
+        return uiEntryReadOnly(e) != 0;
     }
     pub fn SetReadOnly(e: *Entry, readonly: c_int) void {
         return uiEntrySetReadOnly(e, @intFromBool(readonly));
@@ -652,7 +652,7 @@ pub const Tab = opaque {
     pub const NumPages = uiTabNumPages;
 
     pub fn Margined(t: *Tab, index: c_int) bool {
-        return uiTabMargined(t, index) == 1;
+        return uiTabMargined(t, index) != 0;
     }
     pub fn SetMargined(t: *Tab, index: c_int, margined: bool) void {
         return uiTabSetMargined(t, index, @intFromBool(margined));
@@ -682,7 +682,7 @@ pub const Group = opaque {
     pub const SetTitle = uiGroupSetTitle;
     pub const SetChild = uiGroupSetChild;
     pub fn Margined(g: *Group) bool {
-        return uiGroupMargined(g) == 1;
+        return uiGroupMargined(g) != 0;
     }
     pub fn SetMargined(g: *Group, margined: bool) void {
         uiGroupSetMargined(g, margined);
@@ -757,7 +757,7 @@ pub const Slider = opaque {
     pub const Value = uiSliderValue;
     pub const SetValue = uiSliderSetValue;
     pub fn HasToolTip(s: *Slider) bool {
-        return uiSliderHasToolTip(s) == 1;
+        return uiSliderHasToolTip(s) != 0;
     }
     pub fn SetHasToolTip(s: *Slider, hasToolTip: bool) void {
         uiSliderSetHasToolTip(s, @intFromBool(hasToolTip));
@@ -1056,7 +1056,7 @@ pub const MultilineEntry = opaque {
         uiMultilineEntryOnChanged(self, callback, userdata);
     }
     pub fn ReadOnly(e: *MultilineEntry) bool {
-        return uiMultilineEntryReadOnly(e) == 1;
+        return uiMultilineEntryReadOnly(e) != 0;
     }
     pub fn SetReadOnly(e: *MultilineEntry, readonly: bool) void {
         return uiMultilineEntrySetReadOnly(e, @intFromBool(readonly));
@@ -1097,7 +1097,7 @@ pub const MenuItem = opaque {
         uiMenuItemOnClicked(self, callback, userdata);
     }
     pub fn Checked(m: *MenuItem) bool {
-        return uiMenuItemChecked(m) == 1;
+        return uiMenuItemChecked(m) != 0;
     }
     pub fn SetChecked(m: *MenuItem, checked: bool) void {
         return uiMenuItemSetChecked(m, @intFromBool(checked));
@@ -1815,7 +1815,7 @@ pub const Form = opaque {
     pub const NumChildren = uiFormNumChildren;
     pub const Delete = uiFormDelete;
     pub fn Padded(f: *Form) bool {
-        return uiFormPadded(f) == 1;
+        return uiFormPadded(f) != 0;
     }
     pub fn SetPadded(f: *Form, padded: bool) void {
         uiFormSetPadded(f, @intFromBool(padded));
@@ -1885,7 +1885,7 @@ pub const Grid = opaque {
     pub const Append = uiGridAppend;
     pub const InsertAt = uiGridInsertAt;
     pub fn Padded(g: *Grid) bool {
-        return uiGridPadded(g) == 1;
+        return uiGridPadded(g) != 0;
     }
     pub fn SetPadded(g: *Grid, padded: bool) void {
         uiGridSetPadded(g, @intFromBool(padded));
@@ -2081,7 +2081,7 @@ pub const Table = opaque {
         }
     }
     pub fn HeaderVisible(t: *Table) bool {
-        return uiTableHeaderVisible(t) == 1;
+        return uiTableHeaderVisible(t) != 0;
     }
     pub fn HeaderSetVisible(t: *Table, visible: bool) void {
         uiTableHeaderSetVisible(t, @intFromBool(visible));
