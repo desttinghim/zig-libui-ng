@@ -1449,16 +1449,16 @@ pub const Draw = opaque {
         M31: f64 = 0,
         M32: f64 = 0,
 
-        pub extern fn uiDrawMatrixSetIdentity(m: *Area.Draw.Matrix) void;
-        pub extern fn uiDrawMatrixTranslate(m: *Area.Draw.Matrix, x: f64, y: f64) void;
-        pub extern fn uiDrawMatrixScale(m: *Area.Draw.Matrix, xCenter: f64, yCenter: f64, x: f64, y: f64) void;
-        pub extern fn uiDrawMatrixRotate(m: *Area.Draw.Matrix, x: f64, y: f64, amount: f64) void;
-        pub extern fn uiDrawMatrixSkew(m: *Area.Draw.Matrix, x: f64, y: f64, xamount: f64, yamount: f64) void;
-        pub extern fn uiDrawMatrixMultiply(dest: *Area.Draw.Matrix, src: *Area.Draw.Matrix) void;
-        pub extern fn uiDrawMatrixInvertible(m: *Area.Draw.Matrix) c_int;
-        pub extern fn uiDrawMatrixInvert(m: *Area.Draw.Matrix) c_int;
-        pub extern fn uiDrawMatrixTransformPoint(m: *Area.Draw.Matrix, x: *f64, y: *f64) void;
-        pub extern fn uiDrawMatrixTransformSize(m: *Area.Draw.Matrix, x: *f64, y: *f64) void;
+        pub extern fn uiDrawMatrixSetIdentity(m: *Draw.Matrix) void;
+        pub extern fn uiDrawMatrixTranslate(m: *Draw.Matrix, x: f64, y: f64) void;
+        pub extern fn uiDrawMatrixScale(m: *Draw.Matrix, xCenter: f64, yCenter: f64, x: f64, y: f64) void;
+        pub extern fn uiDrawMatrixRotate(m: *Draw.Matrix, x: f64, y: f64, amount: f64) void;
+        pub extern fn uiDrawMatrixSkew(m: *Draw.Matrix, x: f64, y: f64, xamount: f64, yamount: f64) void;
+        pub extern fn uiDrawMatrixMultiply(dest: *Draw.Matrix, src: *Draw.Matrix) void;
+        pub extern fn uiDrawMatrixInvertible(m: *Draw.Matrix) c_int;
+        pub extern fn uiDrawMatrixInvert(m: *Draw.Matrix) c_int;
+        pub extern fn uiDrawMatrixTransformPoint(m: *Draw.Matrix, x: *f64, y: *f64) void;
+        pub extern fn uiDrawMatrixTransformSize(m: *Draw.Matrix, x: *f64, y: *f64) void;
 
         pub const SetIdentity = uiDrawMatrixSetIdentity;
         pub const Translate = uiDrawMatrixTranslate;
