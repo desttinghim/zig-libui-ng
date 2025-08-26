@@ -63,7 +63,7 @@ const CustomWidget = struct {
         // Draw the outline of a semi-circle
         var stroke_path = ui.Draw.Path.New(.Winding) orelse return;
         defer stroke_path.Free();
-        stroke_path.NewFigureWithArc(draw_params.AreaWidth / 2 - 24, text_extents.y + 12, 12, 0, std.math.pi, 0);
+        stroke_path.NewFigureWithArc(draw_params.AreaWidth / 2 - 24, text_extents.y + 12, 12, 0, std.math.pi, false);
         stroke_path.End();
         var stroke_params = ui.Draw.StrokeParams.init(.{});
         draw_params.Context.?.Stroke(stroke_path, &brush, &stroke_params);
@@ -71,7 +71,7 @@ const CustomWidget = struct {
         // Draw a filled semi-circle
         var fill_path = ui.Draw.Path.New(.Winding) orelse return;
         defer fill_path.Free();
-        fill_path.NewFigureWithArc(draw_params.AreaWidth / 2 + 24, text_extents.y + 12, 12, 0, std.math.pi, 0);
+        fill_path.NewFigureWithArc(draw_params.AreaWidth / 2 + 24, text_extents.y + 12, 12, 0, std.math.pi, false);
         fill_path.End();
         draw_params.Context.?.Fill(fill_path, &brush);
     }

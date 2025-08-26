@@ -102,13 +102,13 @@ const App = struct {
     book: *ui.Button,
 
     // data
-    leave_date: ?ui.struct_tm = null,
-    return_date: ?ui.struct_tm = null,
+    leave_date: ?ui.DateTimePicker.struct_tm = null,
+    return_date: ?ui.DateTimePicker.struct_tm = null,
 
     const Event = union(enum) {
         ChangeType: FlightType,
-        ChangeLeaveDate: ui.struct_tm,
-        ChangeReturnDate: ui.struct_tm,
+        ChangeLeaveDate: ui.DateTimePicker.struct_tm,
+        ChangeReturnDate: ui.DateTimePicker.struct_tm,
         Book,
         Process,
     };

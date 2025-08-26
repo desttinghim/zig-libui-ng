@@ -201,7 +201,7 @@ const CircleDrawer = struct {
             var path = ui.Draw.Path.New(.Winding) orelse return;
             defer path.Free();
 
-            path.NewFigureWithArc(circle.x, circle.y, circle.radius, 0, 2 * std.math.pi, 0);
+            path.NewFigureWithArc(circle.x, circle.y, circle.radius, 0, 2 * std.math.pi, false);
             path.End();
 
             if (circle.is_filled) {
