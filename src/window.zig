@@ -21,7 +21,7 @@ pub const Window = opaque {
     pub extern fn uiWindowFocused(w: *Window) c_int;
     pub extern fn uiWindowBorderless(w: *Window) c_int;
     pub extern fn uiWindowSetBorderless(w: *Window, borderless: c_int) void;
-    pub extern fn uiWindowSetChild(w: *Window, child: *Control) void;
+    pub extern fn uiWindowSetChild(w: *Window, child: ?*Control) void;
     pub extern fn uiWindowMargined(w: *Window) c_int;
     pub extern fn uiWindowSetMargined(w: *Window, margined: c_int) void;
     pub extern fn uiWindowResizeable(w: *Window) c_int;
