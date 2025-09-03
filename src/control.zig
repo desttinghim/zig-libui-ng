@@ -17,7 +17,7 @@ pub const Control = extern struct {
     pub extern fn uiControlDestroy(c: *Control) void;
     pub extern fn uiControlHandle(c: *Control) usize;
     pub extern fn uiControlParent(c: *Control) ?*Control;
-    pub extern fn uiControlSetParent(c: *Control, parent: *Control) void;
+    pub extern fn uiControlSetParent(c: *Control, parent: ?*Control) void;
     pub extern fn uiControlToplevel(c: *Control) c_int;
     pub extern fn uiControlVisible(c: *Control) c_int;
     pub extern fn uiControlShow(c: *Control) void;
