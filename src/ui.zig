@@ -780,8 +780,14 @@ pub const Slider = opaque {
         uiSliderOnReleased(self, callback, userdata);
     }
     pub const SetRange = uiSliderSetRange;
-    pub fn New(min: c_int, max: c_int) !*Slider {
-        return uiNewSlider(min, max) orelse error.InitSlider;
+
+    pub const TypeEnum = union(enum) {
+        Integer: struct { min: c_int, max: c_int },
+    };
+    pub fn New(t: TypeEnum) !*Slider {
+        return switch (t) {
+            .Integer => |int| uiNewSlider(int.min, int.max),
+        } orelse error.InitSlider;
     }
 };
 
