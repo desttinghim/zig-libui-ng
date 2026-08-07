@@ -1,12 +1,13 @@
 .{
     .name = .bindings_libui_ng,
     .fingerprint = 0xd54daa54f59860a7,
+    .minimum_zig_version = "0.16.0",
     .version = "0.1.0",
     .paths = .{""},
     .dependencies = .{
         .libui = .{
-            .url = "git+https://github.com/desttinghim/libui-ng?ref=wp-2025#76a6b310e85d02d979a0ac91bac55c3f263f1b05",
-            .hash = "N-V-__8AAO6jJQAMPabhyevKh32E0JDmv9wpgmtNtGSCrn-0",
+            .url = "git+https://github.com/libui-ng/libui-ng#43ba1ef553c8993a43a67f1ce6e35983a2660d8c",
+            .hash = "N-V-__8AABwqJQDzpF_fr-pJkXvthA7X-0Zn78SVvl9swkq1",
         },
     },
 }

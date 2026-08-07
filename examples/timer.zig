@@ -2,10 +2,11 @@ const std = @import("std");
 const ui = @import("ui");
 
 pub const App = struct {
+    io: std.Io,
     entry: *ui.MultilineEntry,
 };
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
     var init_options = ui.InitData{ .options = .{ .Size = 0 } };
     ui.Init(&init_options) catch |e| {
         std.debug.print("Error initializing libui: {s}\n", .{init_options.get_error()});
@@ -23,6 +24,7 @@ pub fn main() !void {
     entry.SetReadOnly(true);
 
     var app = App{
+        .io = init.io,
         .entry = entry,
     };
 
@@ -43,7 +45,7 @@ pub fn main() !void {
 
 pub fn say_time(app_opt: ?*App) ui.Error!ui.TimerAction {
     const app: *App = app_opt orelse return error.LibUINullUserdata;
-    const time = std.time.timestamp();
+    const time = std.Io.Timestamp.now(app.io, .real);
     var buffer = [_]u8{0} ** 64;
     const string = std.fmt.bufPrintZ(&buffer, "The current timestamp is: {}\n", .{time}) catch @panic("Error formatting text.");
     app.entry.Append(string.ptr);

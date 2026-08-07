@@ -14,7 +14,7 @@ pub fn main() !void {
     };
     defer ui.Uninit();
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.DebugAllocator(.{}).init;
     defer _ = gpa.deinit();
 
     // Initialize components
@@ -38,7 +38,7 @@ pub fn main() !void {
         .data = App.Data.init(gpa.allocator()),
         .data_allocator = gpa.allocator(),
         .list = vbox_list,
-        .list_buttons = std.ArrayList(*ui.Button).init(gpa.allocator()),
+        .list_buttons = std.ArrayList(*ui.Button).empty,
         .arena_current = std.heap.ArenaAllocator.init(gpa.allocator()),
         .arena_old = std.heap.ArenaAllocator.init(gpa.allocator()),
         .entry_name = entry_name,
@@ -121,7 +121,7 @@ const App = struct {
             app.data_allocator.free(datum.name);
             app.data_allocator.free(datum.surname);
         }
-        app.list_buttons.deinit();
+        app.list_buttons.deinit(app.data_allocator);
         app.data.deinit();
         app.arena_current.deinit();
         app.arena_old.deinit();
@@ -174,7 +174,7 @@ const App = struct {
         app.arena_current = arena;
     }
 
-    const ListUpdateError = std.fmt.AllocPrintError || error{InitButton};
+    const ListUpdateError = error{ InitButton, OutOfMemory };
     fn updateList(app: *App, filter_text: ?[]const u8) ListUpdateError!void {
         app.rotateArenas();
         if (!app.arena_current.reset(.retain_capacity)) {
@@ -201,14 +201,14 @@ const App = struct {
             } else true;
 
             if (keep) {
-                const name_str = try std.fmt.allocPrintZ(allocator, "{s}, {s}", .{
+                const name_str = try std.fmt.allocPrintSentinel(allocator, "{s}, {s}", .{
                     datum.surname,
                     datum.name,
-                });
+                }, 0);
                 const btn = try ui.Button.New(name_str);
                 app.list.Append(btn.as_control(), .dont_stretch);
                 btn.OnClicked(anyopaque, SelectError, on_item_clicked, @ptrFromInt(id));
-                try app.list_buttons.append(btn);
+                try app.list_buttons.append(app.data_allocator, btn);
             }
         }
     }

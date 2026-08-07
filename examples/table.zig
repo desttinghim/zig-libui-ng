@@ -28,10 +28,10 @@ pub fn main() !void {
     const vbox = try ui.Box.New(.Vertical);
     main_window.SetChild(vbox.as_control());
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    var allocator = std.heap.DebugAllocator(.{}).init;
+    defer _ = allocator.deinit();
 
-    const string_allocator = gpa.allocator();
+    const gpa = allocator.allocator();
 
     // Allocate a space on the stack to store a `extras.Table(TestStruct)`.
     var const_table: extras.Table(TestStruct) = undefined;
@@ -52,17 +52,17 @@ pub fn main() !void {
 
     // ----
     // Initialize the `extras.Table(TestStruct)` and pass it an ArrayList
-    var data = std.ArrayList(TestStruct).init(gpa.allocator());
-    defer data.deinit();
+    var data = std.ArrayList(TestStruct).empty;
+    defer data.deinit(gpa);
 
-    const hello = try string_allocator.dupeZ(u8, "Hello");
-    const world = try string_allocator.dupeZ(u8, "World");
-    try data.appendSlice(&.{
+    const hello = try gpa.dupeZ(u8, "Hello");
+    const world = try gpa.dupeZ(u8, "World");
+    try data.appendSlice(gpa, &.{
         .{ .field_1 = 1, .field_2 = hello, .field_3 = .{ .data = 0 }, .field_4 = .{ .data = 0 } },
         .{ .field_1 = 2, .field_2 = world, .field_3 = .{ .data = 1 }, .field_4 = .{ .data = 50 } },
     });
 
-    try table.init(.{ .array_list = &data }, string_allocator);
+    try table.init(.{ .array_list = &data }, gpa);
     defer table.deinit(); // Defer deinitalization of `extras.Table(TestStruct)` to end of scope
 
     // Create a new `ui.Table` struct with the columns automatically populated

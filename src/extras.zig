@@ -208,7 +208,7 @@ pub fn Table(comptime T: type) type {
 
         /// Implementation of `numColumns` for `ui.Table.Model.Handler`. Returns the number
         /// of fields in struct `T`.
-        fn numColumns(_: ?*ui.Table.Model.Handler, _: ?*ui.Table.Model) callconv(.C) c_int {
+        fn numColumns(_: ?*ui.Table.Model.Handler, _: ?*ui.Table.Model) callconv(.c) c_int {
             return @intCast(num_columns); // comptime number based on number of fields in T
         }
 
@@ -217,7 +217,7 @@ pub fn Table(comptime T: type) type {
         /// - `ui.Table.Value.Type.Color` is used for setting the background color of rows
         /// - `ui.Table.Value.Type.Image` is used for displaying images
         /// - `ui.Table.Value.Type.Text`  is used for strings. For user editable integers and floats, this is used to allow editing.
-        fn columnType(handler: *ui.Table.Model.Handler, _: *ui.Table.Model, columni: c_int) callconv(.C) ui.Table.Value.Type {
+        fn columnType(handler: *ui.Table.Model.Handler, _: *ui.Table.Model, columni: c_int) callconv(.c) ui.Table.Value.Type {
             _ = handler;
 
             const column = @as(usize, @intCast(columni));
@@ -239,7 +239,7 @@ pub fn Table(comptime T: type) type {
         /// Implementation of `numRows` for `ui.Table.Model.Handler`.
         /// If an array list is used for the backing data, it returns `array_list.items.len`.
         /// If a const slice is used for the backing data, it return `slice.len`.
-        fn numRows(handler: ?*ui.Table.Model.Handler, _: ?*ui.Table.Model) callconv(.C) c_int {
+        fn numRows(handler: ?*ui.Table.Model.Handler, _: ?*ui.Table.Model) callconv(.c) c_int {
             const self = from_model_handler(handler orelse return 0);
             const len = switch (self.data) {
                 .array_list => |list| list.items.len,
@@ -250,7 +250,7 @@ pub fn Table(comptime T: type) type {
 
         /// Implementation of `cellValue` for `ui.Table.Model.Handler`.
         /// The value returned is based on the type of the field in struct `T`.
-        fn cellValue(handler: ?*ui.Table.Model.Handler, _: ?*ui.Table.Model, rowi: c_int, columni: c_int) callconv(.C) ?*ui.Table.Value {
+        fn cellValue(handler: ?*ui.Table.Model.Handler, _: ?*ui.Table.Model, rowi: c_int, columni: c_int) callconv(.c) ?*ui.Table.Value {
             const row = @as(usize, @intCast(rowi));
             const column = @as(usize, @intCast(columni));
             const self = from_model_handler(handler orelse @panic("null model"));
@@ -305,7 +305,7 @@ pub fn Table(comptime T: type) type {
             return ui.Table.Value.New(value) catch @panic("cellValue unable to call ui.Table.Value.New()");
         }
 
-        fn setCellValue(handler: ?*ui.Table.Model.Handler, _: ?*ui.Table.Model, rowi: c_int, columni: c_int, value_opt: ?*const ui.Table.Value) callconv(.C) void {
+        fn setCellValue(handler: ?*ui.Table.Model.Handler, _: ?*ui.Table.Model, rowi: c_int, columni: c_int, value_opt: ?*const ui.Table.Value) callconv(.c) void {
             const row = @as(usize, @intCast(rowi));
             const column = @as(usize, @intCast(columni));
             const self = from_model_handler(handler orelse return);

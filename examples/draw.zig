@@ -29,7 +29,7 @@ const CustomWidget = struct {
         return this.handler.New(.Area);
     }
 
-    fn Draw(handler: *ui.Area.Handler, area: *ui.Area, draw_params: *ui.Draw.Params) callconv(.C) void {
+    fn Draw(handler: *ui.Area.Handler, area: *ui.Area, draw_params: *ui.Draw.Params) callconv(.c) void {
         const this: *@This() = @fieldParentPtr("handler", handler);
         _ = this;
         _ = area;
@@ -76,24 +76,24 @@ const CustomWidget = struct {
         draw_params.Context.?.Fill(fill_path, &brush);
     }
 
-    fn MouseEvent(handler: *ui.Area.Handler, area: *ui.Area, mouse_event: *ui.Area.MouseEvent) callconv(.C) void {
+    fn MouseEvent(handler: *ui.Area.Handler, area: *ui.Area, mouse_event: *ui.Area.MouseEvent) callconv(.c) void {
         _ = handler;
         _ = area;
         _ = mouse_event;
     }
 
-    fn MouseCrossed(handler: *ui.Area.Handler, area: *ui.Area, cross_value: c_int) callconv(.C) void {
+    fn MouseCrossed(handler: *ui.Area.Handler, area: *ui.Area, cross_value: c_int) callconv(.c) void {
         _ = handler;
         _ = area;
         _ = cross_value;
     }
 
-    fn DragBroken(handler: *ui.Area.Handler, area: *ui.Area) callconv(.C) void {
+    fn DragBroken(handler: *ui.Area.Handler, area: *ui.Area) callconv(.c) void {
         _ = handler;
         _ = area;
     }
 
-    fn KeyEvent(handler: *ui.Area.Handler, area: *ui.Area, key_event: *ui.Area.KeyEvent) callconv(.C) c_int {
+    fn KeyEvent(handler: *ui.Area.Handler, area: *ui.Area, key_event: *ui.Area.KeyEvent) callconv(.c) c_int {
         _ = handler;
         _ = area;
         _ = key_event;
@@ -107,7 +107,7 @@ pub fn on_closing(_: *ui.Window, _: ?*void) !ui.Window.ClosingAction {
 }
 
 pub fn main() !void {
-    var gpa_allocator = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa_allocator = std.heap.DebugAllocator(.{}).init;
     defer _ = gpa_allocator.deinit();
     const gpa = gpa_allocator.allocator();
 

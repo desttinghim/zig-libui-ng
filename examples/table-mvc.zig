@@ -17,7 +17,7 @@ pub fn on_click(_: *ui.Button, app_opt: ?*App) OnClickError!void {
     const name = try app.allocator.dupeZ(u8, "");
     const surname = try app.allocator.dupeZ(u8, "");
     const button_text = try app.allocator.dupeZ(u8, "Delete");
-    try app.table.data.array_list.append(.{ .name = name, .surname = surname, .button_text = button_text });
+    try app.table.data.array_list.append(app.allocator, .{ .name = name, .surname = surname, .button_text = button_text });
     app.table.model.RowInserted(@intCast(app.table.data.array_list.items.len - 1));
 }
 
@@ -67,16 +67,16 @@ pub fn main() !void {
     vbox.SetPadded(true);
     main_window.SetMargined(true);
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    var allocator = std.heap.DebugAllocator(.{}).init;
+    defer _ = allocator.deinit();
 
-    const string_allocator = gpa.allocator();
+    const gpa = allocator.allocator();
 
     // Our context struct
-    var app = App.init(gpa.allocator());
+    var app = App.init(gpa);
     defer app.deinit();
 
-    try app.model.appendSlice(&.{
+    try app.model.appendSlice(gpa, &.{
         .{ .id = 0, .name = "Hans", .surname = "Emil", .age = 20, .height = 5.5 },
         .{ .id = 1, .name = "Max", .surname = "Mustermann", .age = 21, .height = 5.75 },
         .{ .id = 2, .name = "Roman", .surname = "Tisch", .age = 22, .height = 6.0 },
@@ -97,7 +97,7 @@ pub fn main() !void {
     vbox.Append(hbox.as_control(), .dont_stretch);
 
     // Initialize the `extras.Table(TestStruct)` and pass it an ArrayList
-    try app.table.init(.{ .array_list = &app.view }, string_allocator);
+    try app.table.init(.{ .array_list = &app.view }, gpa);
     defer app.table.deinit(); // Defer deinitalization of `extras.Table(TestStruct)` to end of scope
     app.table.button_callback = on_table_button_clicked;
 
@@ -147,15 +147,15 @@ const App = struct {
     fn init(allocator: std.mem.Allocator) App {
         return .{
             .allocator = allocator,
-            .model = std.ArrayList(ModelData).init(allocator),
-            .view = std.ArrayList(ViewData).init(allocator),
+            .model = std.ArrayList(ModelData).empty,
+            .view = std.ArrayList(ViewData).empty,
             .table = undefined,
         };
     }
 
     fn deinit(app: *App) void {
-        app.model.deinit();
-        app.view.deinit();
+        app.model.deinit(app.allocator);
+        app.view.deinit(app.allocator);
     }
 };
 
@@ -211,7 +211,7 @@ const ViewData = struct {
         switch (column) {
             5 => {
                 const modf = std.math.modf(edit.height);
-                const min_size = std.fmt.format_float.min_buffer_size;
+                const min_size = std.fmt.float.min_buffer_size;
                 var buf: [min_size]u8 = undefined;
                 const string = std.fmt.bufPrintZ(&buf, "{d}' {d}\"", .{ modf.ipart, @round(modf.fpart * 12) }) catch return null;
                 return ui.Table.Value.New(.{ .String = string }) catch null;
