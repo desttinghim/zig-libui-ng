@@ -3,12 +3,6 @@ const builtin = @import("builtin");
 
 const LinkMode = std.builtin.LinkMode;
 
-const BuildVars = struct {
-    target: std.Build.ResolvedTarget,
-    optimize: std.builtin.OptimizeMode,
-    link_mode: std.builtin.LinkMode,
-};
-
 pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
@@ -21,10 +15,12 @@ pub fn build(b: *std.Build) !void {
         .link_mode = link_mode,
     };
 
+    // compile library
     const libui = buildLibUi(b, vars);
     buildExamples(b, vars, libui);
     buildTests(b, vars, libui);
 
+    // zig modules
     const ui_module = b.addModule("ui", .{
         .root_source_file = b.path("src/ui.zig"),
     });
@@ -39,63 +35,15 @@ pub fn build(b: *std.Build) !void {
     });
 
     const check_step = b.step("check", "Build all examples");
-    const is_dynamic = false;
 
-    inline for (examples, uses_extras) |example_name, use_extras| {
-        const exe = b.addExecutable(.{
-            .name = example_name,
-            .root_module = b.createModule(.{
-                .root_source_file = b.path("examples/" ++ example_name ++ ".zig"),
-                .target = target,
-                .optimize = optimize,
-            }),
-            .win32_manifest = b.path(if (is_dynamic)
-                "examples/example.manifest"
-            else
-                "examples/example.static.manifest"),
-        });
-        exe.root_module.addImport("ui", ui_module);
-        if (use_extras) exe.root_module.addImport("ui-extras", ui_extras_module);
-        exe.subsystem = std.Target.SubSystem.Windows;
-
-        b.installArtifact(exe);
-
-        const run_cmd = b.addRunArtifact(exe);
-        run_cmd.step.dependOn(&exe.step);
-
-        const run_step = b.step("run-example-" ++ example_name, "Run the hello example app");
-        run_step.dependOn(&run_cmd.step);
-
-        check_step.dependOn(&exe.step);
-    }
+    buildZigExamples(b, vars, ui_module, ui_extras_module, check_step);
 }
 
-const examples = &[_][]const u8{
-    "hello",
-    "counter",
-    "timer",
-    "table",
-    "temperature-converter",
-    "flight-booker",
-    "table-mvc",
-    "draw",
-    "menu",
-    "crud",
-    "circle-drawer",
-};
-
-const uses_extras = &[_]bool{
-    false,
-    false,
-    false,
-    true,
-    false,
-    false,
-    true,
-    false,
-    false,
-    false,
-    false,
+/// Variables common between all build steps
+const BuildVars = struct {
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+    link_mode: std.builtin.LinkMode,
 };
 
 pub fn buildLibUi(b: *std.Build, vars: BuildVars) *std.Build.Step.Compile {
@@ -236,6 +184,74 @@ pub fn buildExamples(b: *std.Build, vars: BuildVars, libui: *std.Build.Step.Comp
         const run = b.addRunArtifact(exe);
         const run_step = b.step("example-" ++ name ++ "-run", "Runs the " ++ name ++ " example");
         run_step.dependOn(&run.step);
+    }
+}
+
+pub fn buildZigExamples(
+    b: *std.Build,
+    vars: BuildVars,
+    ui_module: *std.Build.Module,
+    ui_extras_module: *std.Build.Module,
+    check_step: *std.Build.Step,
+) void {
+    const target: std.Build.ResolvedTarget = vars.target;
+    const optimize: std.builtin.OptimizeMode = vars.optimize;
+    const link_mode: LinkMode = vars.link_mode;
+
+    const examples = &[_][]const u8{
+        "hello",
+        "counter",
+        "timer",
+        "table",
+        "temperature-converter",
+        "flight-booker",
+        "table-mvc",
+        "draw",
+        "menu",
+        "crud",
+        "circle-drawer",
+    };
+
+    const uses_extras = &[_]bool{
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+    };
+
+    inline for (examples, uses_extras) |example_name, use_extras| {
+        const exe = b.addExecutable(.{
+            .name = example_name,
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("examples/" ++ example_name ++ ".zig"),
+                .target = target,
+                .optimize = optimize,
+            }),
+            .win32_manifest = b.path(if (link_mode == .dynamic)
+                "examples/example.manifest"
+            else
+                "examples/example.static.manifest"),
+        });
+        exe.root_module.addImport("ui", ui_module);
+        if (use_extras) exe.root_module.addImport("ui-extras", ui_extras_module);
+        exe.subsystem = std.Target.SubSystem.Windows;
+
+        b.installArtifact(exe);
+
+        const run_cmd = b.addRunArtifact(exe);
+        run_cmd.step.dependOn(&exe.step);
+
+        const run_step = b.step("example-zig-" ++ example_name ++ "-run", "Run the " ++ example_name ++ " example app");
+        run_step.dependOn(&run_cmd.step);
+
+        check_step.dependOn(&exe.step);
     }
 }
 
