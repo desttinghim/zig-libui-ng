@@ -685,7 +685,7 @@ pub const Group = opaque {
         return uiGroupMargined(g) == 1;
     }
     pub fn SetMargined(g: *Group, margined: bool) void {
-        uiGroupSetMargined(g, margined);
+        uiGroupSetMargined(g, @intFromBool(margined));
     }
     pub fn New(title: [*:0]const u8) !*Group {
         return uiNewGroup(title) orelse error.InitGroup;
